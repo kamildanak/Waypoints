@@ -1,0 +1,17 @@
+[
+{
+  "modid": "Waypoints",
+  "name": "Waypoints",
+  "description": "Adds a waypoint system that lets instantly cross large distances around the world.",
+  "version": "1.0.2",
+  "credits": "",
+  "logoFile": "",
+  "mcversion": "1.6.4",
+  "url": "",
+  "updateUrl": "",
+  "authors": [ "AUTOMATIC_MAIDEN" ],
+  "parent":"",
+  "screenshots": [],
+  "dependencies": []
+}
+]
