@@ -1,54 +1,43 @@
 package info.jbcs.minecraft.waypoints;
 
-import info.jbcs.minecraft.utilities.packets.PacketHandler;
-
 import java.io.File;
 import java.io.IOException;
 
-import net.minecraft.block.Block;
+import cpw.mods.fml.common.event.*;
+import cpw.mods.fml.common.network.FMLEventChannel;
+import cpw.mods.fml.common.network.NetworkRegistry;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.item.Item;
+import net.minecraft.init.Blocks;
+import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.CraftingManager;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.ISaveHandler;
 import net.minecraft.world.storage.SaveHandler;
-import net.minecraftforge.common.Configuration;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.ForgeSubscribe;
-import net.minecraftforge.event.world.WorldEvent;
+import net.minecraftforge.common.config.Configuration;
 import cpw.mods.fml.common.Mod;
-import cpw.mods.fml.common.Mod.Init;
-import cpw.mods.fml.common.Mod.Instance;
-import cpw.mods.fml.common.Mod.PostInit;
-import cpw.mods.fml.common.Mod.PreInit;
 import cpw.mods.fml.common.SidedProxy;
-import cpw.mods.fml.common.event.FMLInitializationEvent;
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.network.NetworkMod;
 import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.common.registry.LanguageRegistry;
+import cpw.mods.fml.common.Mod.EventHandler;
 
-@Mod(modid="Waypoints", name="Waypoints", version="1.0.2")
-@NetworkMod(clientSideRequired=true, serverSideRequired=true)
+@Mod(modid="Waypoints", name="Waypoints", version="1.1.0")
 public class Waypoints{
-	public static Configuration config;
+    static Configuration config;
 	public static boolean compactView;
+    public static FMLEventChannel Channel;
 	
 	public static BlockWaypoint blockWaypoint;
 
-	int getBlock(String name,int id){
-		return config.getBlock(name, id).getInt(id);
-	}
-	
-	@Instance("Waypoints")
+
 	public static Waypoints instance;
+    public static CreativeTabs	tabWaypoints;
+    private File loadedWorldDir;
 
 	@SidedProxy(clientSide = "info.jbcs.minecraft.waypoints.ProxyClient", serverSide = "info.jbcs.minecraft.waypoints.Proxy")
 	public static Proxy proxy;
 
-	@PreInit
+	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
 		config = new Configuration(event.getSuggestedConfigurationFile());
 		config.load();
@@ -56,28 +45,29 @@ public class Waypoints{
 		proxy.preInit();
 	}
 	
-	@Init
+	@EventHandler
 	public void init(FMLInitializationEvent event) {
-		blockWaypoint=(BlockWaypoint) new BlockWaypoint(getBlock("waypoint",2950)).setUnlocalizedName("waypoint").setHardness(2.0F).setResistance(10F).setStepSound(Block.soundStoneFootstep).setCreativeTab(CreativeTabs.tabTransport);
-		LanguageRegistry.addName(blockWaypoint, "Waypoint block");
-		GameRegistry.registerBlock(blockWaypoint, ItemWaypoint.class, "waypoint");
+        Channel = NetworkRegistry.INSTANCE.newEventDrivenChannel("Waypoints");
+        Waypoints.Channel.register(new ServerPacketHandler());
+        proxy.init();
+
+        tabWaypoints = CreativeTabs.tabDecorations;
+
+		blockWaypoint = new BlockWaypoint();
+        GameRegistry.registerBlock(blockWaypoint, ItemWaypoint.class, "waypoint");
 		
 		compactView=config.get("general", "compact view", true, "Only show one line in Waypoint GUI, in order to fit more waypoints on the screen").getBoolean(true);
-		
-		proxy.init();
-		
-		Packets.waypointName.create();
-		Packets.waypointsMenu.create();
-		PacketHandler.register(this);
-		
-		CraftingManager.getInstance().addRecipe(new ItemStack(blockWaypoint, 1), new Object[] { "***", "*X*", '*', new ItemStack(Block.stone, 1), 'X', new ItemStack(Item.enderPearl, 1)});
-		
+
+		CraftingManager.getInstance().addRecipe(new ItemStack(blockWaypoint, 1),
+                new Object[] { "***", "*X*",
+                        '*', new ItemStack(Blocks.stone, 1),
+                        'X', new ItemStack(Items.ender_pearl, 1)});
+
         MinecraftForge.EVENT_BUS.register(this);
-        
         config.save();
 	}
 
-	@PostInit
+	@EventHandler
 	public void postInit(FMLPostInitializationEvent event) {
 	}
 	
@@ -86,10 +76,10 @@ public class Waypoints{
 		if(! (handler instanceof SaveHandler)) return null;
 		return ((SaveHandler)handler).getWorldDirectory();
 	}
-	
-	@ForgeSubscribe
-	public void onSavingWorld(WorldEvent.Save evt){
-		File file=getWorldDir(evt.world);
+
+    @EventHandler
+    public void onServerStop(FMLServerStoppingEvent evt) {
+        File file = loadedWorldDir;
 		if(file==null) return;
 		
 		try {
@@ -100,11 +90,12 @@ public class Waypoints{
 		}
 	}
 
-	@ForgeSubscribe
-	public void onLoadingWorld(WorldEvent.Load evt){
-		File file=getWorldDir(evt.world);
+	@EventHandler
+	public void onLoadingWorld(FMLServerStartingEvent evt){
+		File file=getWorldDir(evt.getServer().getEntityWorld());
 		if(file==null) return;
-		
+        loadedWorldDir =file;
+
 		WaypointPlayerInfo.location=new File(file,"waypoints-discovery");
 		File waypointsLocation=new File(file,"waypoints.dat");
 		

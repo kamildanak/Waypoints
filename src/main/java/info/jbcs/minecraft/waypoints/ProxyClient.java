@@ -7,5 +7,6 @@ public class ProxyClient extends Proxy {
 
 	@Override
 	public void init() {
+        Waypoints.Channel.register(new ClientPacketHandler());
 	}
 }

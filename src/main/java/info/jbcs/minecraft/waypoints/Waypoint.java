@@ -5,11 +5,17 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import cpw.mods.fml.common.network.ByteBufUtils;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.http.multipart.AbstractDiskHttpData;
+import io.netty.handler.codec.http.multipart.AbstractHttpData;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.packet.Packet;
 
 public class Waypoint {
 	public int id;
@@ -32,21 +38,21 @@ public class Waypoint {
 		changed=true;
 	}
 	
-	public Waypoint(DataInputStream stream) throws IOException{
+	public Waypoint(ByteBuf stream) throws IOException{
 		id=-1;
 		read(stream);
 	}
 
-	void write(DataOutputStream stream) throws IOException{
+	void write(ByteBuf stream) throws IOException{
 		stream.writeInt(id);
 		stream.writeInt(x);
 		stream.writeInt(y);
 		stream.writeInt(z);
 		stream.writeInt(dimension);
-		Packet.writeString(name, stream);
+        ByteBufUtils.writeUTF8String(stream, name);
 	}
 	
-	void read(DataInputStream stream) throws IOException{
+	void read(ByteBuf stream) throws IOException{
 		if(id!=-1) return;
 
 		id=stream.readInt();
@@ -54,7 +60,7 @@ public class Waypoint {
 		y=stream.readInt();
 		z=stream.readInt();
 		dimension=stream.readInt();
-		name=Packet.readString(stream, 32);
+        name=ByteBufUtils.readUTF8String(stream);
 	}
 
 	void write(NBTTagCompound tag){
@@ -129,9 +135,6 @@ public class Waypoint {
 		changed=false;
 		
 		int index=0;
-		
-		RandomAccessFile output=new RandomAccessFile(file,"rw");
-		output.seek(0);
 		NBTTagCompound tag=new NBTTagCompound();
 		tag.setInteger("count", existingWaypoints.size());
 		for(Waypoint w: existingWaypoints){
@@ -139,10 +142,12 @@ public class Waypoint {
 			w.write(wtag);
 			tag.setTag(""+(index++), wtag);
 		}
-		
-		NBTTagCompound.writeNamedTag(tag, output);
-		output.setLength(output.getFilePointer());
-		output.close();
+
+        ByteBuf buffer = Unpooled.buffer();
+        ByteBufUtils.writeTag(buffer, tag);
+        byte[] bytes = new byte[buffer.readableBytes()];
+        buffer.readBytes(bytes);
+        Files.write(file.toPath(), bytes);
 	}
 
 	public static void read(File file) throws IOException {
@@ -150,10 +155,11 @@ public class Waypoint {
 		waypointsLocationMap.clear();
 		nextId=0;
 	
-		RandomAccessFile input=new RandomAccessFile(file,"rw");
-		input.seek(0);
-		NBTTagCompound tag=(NBTTagCompound) NBTTagCompound.readNamedTag(input);
-		input.close();
+
+        byte[] bytes = Files.readAllBytes(file.toPath());;
+        ByteBuf buffer = Unpooled.buffer();
+        buffer.writeBytes(bytes);
+        NBTTagCompound tag = ByteBufUtils.readTag(buffer);
 		
 		int count=tag.getInteger("count");
 		for(int i=0;i<count;i++){
@@ -162,5 +168,4 @@ public class Waypoint {
 			if(nextId<=w.id) nextId=w.id+1;
 		}
 	}
-
 }

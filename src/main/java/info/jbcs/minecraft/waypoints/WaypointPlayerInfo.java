@@ -3,9 +3,13 @@ package info.jbcs.minecraft.waypoints;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Set;
 
+import cpw.mods.fml.common.network.ByteBufUtils;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import net.minecraft.nbt.NBTTagCompound;
 
 public class WaypointPlayerInfo {
@@ -26,7 +30,7 @@ public class WaypointPlayerInfo {
 
 		if(location==null) return null;
 		location.mkdirs();
-		
+
 		info=new WaypointPlayerInfo(nn);
 		objects.put(nn, info);
 		
@@ -52,11 +56,11 @@ public class WaypointPlayerInfo {
 	}
 	
 	private void read(File file) throws IOException {
-		RandomAccessFile input=new RandomAccessFile(file,"rw");
-		input.seek(0);
-		NBTTagCompound tag=(NBTTagCompound) NBTTagCompound.readNamedTag(input);
-		input.close();
-		
+        byte[] bytes = Files.readAllBytes(file.toPath());;
+        ByteBuf buffer = Unpooled.buffer();
+        buffer.writeBytes(bytes);
+        NBTTagCompound tag = ByteBufUtils.readTag(buffer);
+
 		int count=tag.getInteger("count");
 		for(int i=0;i<count;i++){
 			int id=tag.getInteger(""+i);
@@ -67,18 +71,18 @@ public class WaypointPlayerInfo {
 	private void write(File file) throws IOException {
 		int index=0;
 		
-		RandomAccessFile output=new RandomAccessFile(file,"rw");
-		output.seek(0);
+
 		NBTTagCompound tag=new NBTTagCompound();
 		Set<Integer> keys=discoveredWaypoints.keySet();
 		tag.setInteger("count", keys.size());
 		for(Integer id: keys){
 			tag.setInteger(""+(index++), id);
 		}
-		
-		NBTTagCompound.writeNamedTag(tag, output);
-		output.setLength(output.getFilePointer());
-		output.close();
+        ByteBuf buffer = Unpooled.buffer();
+        ByteBufUtils.writeTag(buffer, tag);
+        byte[] bytes = new byte[buffer.readableBytes()];
+        buffer.readBytes(bytes);
+        Files.write(file.toPath(), bytes);
 
 		changed=false;
 	}

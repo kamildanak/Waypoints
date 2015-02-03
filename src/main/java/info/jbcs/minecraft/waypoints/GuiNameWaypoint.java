@@ -1,15 +1,13 @@
 package info.jbcs.minecraft.waypoints;
 
-import info.jbcs.minecraft.gui.GuiEdit;
-import info.jbcs.minecraft.gui.GuiExButton;
-import info.jbcs.minecraft.gui.GuiLabel;
-import info.jbcs.minecraft.gui.GuiScreenPlus;
-import info.jbcs.minecraft.utilities.packets.PacketData;
+import cpw.mods.fml.common.network.ByteBufUtils;
+import cpw.mods.fml.common.network.internal.FMLProxyPacket;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import net.minecraft.network.packet.Packet;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 public class GuiNameWaypoint extends GuiScreenPlus {
 	GuiEdit nameEdit;
@@ -24,16 +22,15 @@ public class GuiNameWaypoint extends GuiScreenPlus {
 		addChild(new GuiExButton(7, 45, 49, 20, "OK") {
 			@Override
 			public void onClick() {
-				Packets.waypointsMenu.sendToServer(new PacketData(){
-					@Override
-					public void data(DataOutputStream stream) throws IOException {
-						stream.writeInt(currentWaypointId);
-						stream.writeInt(2);
-						stream.writeInt(currentWaypointId);
-						Packet.writeString(nameEdit.getText(),stream);
-					}
-				});
-				close();
+                ByteBuf buffer = Unpooled.buffer();
+                buffer.writeInt(currentWaypointId);
+                buffer.writeInt(2);
+                buffer.writeInt(currentWaypointId);
+                ByteBufUtils.writeUTF8String(buffer, nameEdit.getText());
+                FMLProxyPacket packet = new FMLProxyPacket(buffer.copy(), "Waypoints");
+
+                Waypoints.Channel.sendToServer(packet);
+                close();
 			}
 		});
 

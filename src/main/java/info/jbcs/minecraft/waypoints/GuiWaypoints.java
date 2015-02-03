@@ -1,14 +1,13 @@
 package info.jbcs.minecraft.waypoints;
 
-import info.jbcs.minecraft.gui.GuiExButton;
-import info.jbcs.minecraft.gui.GuiScreenPlus;
-import info.jbcs.minecraft.gui.GuilScrolledBox;
-import info.jbcs.minecraft.utilities.packets.PacketData;
-
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import cpw.mods.fml.common.network.ByteBufUtils;
+import cpw.mods.fml.common.network.internal.FMLProxyPacket;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import net.minecraft.client.Minecraft;
 
 import org.lwjgl.opengl.GL11;
@@ -93,17 +92,14 @@ public class GuiWaypoints extends GuiScreenPlus {
 		if(selectedButton==null) return false;
 		final Waypoint wp=selectedButton.waypoint;
 		if(wp==null) return false;
-		
-		Packets.waypointsMenu.sendToServer(new PacketData(){
-			@Override
-			public void data(DataOutputStream stream) throws IOException {
-				stream.writeInt(currentWaypointId);
-				stream.writeInt(action);
-				stream.writeInt(wp.id);
-				
-			}
-		});
-		
+
+        ByteBuf buffer = Unpooled.buffer();
+        buffer.writeInt(currentWaypointId);
+        buffer.writeInt(action);
+        buffer.writeInt(wp.id);
+        FMLProxyPacket packet = new FMLProxyPacket(buffer.copy(), "Waypoints");
+        Waypoints.Channel.sendToServer(packet);
+
 		return true;
 	}
 	

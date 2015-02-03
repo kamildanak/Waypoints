@@ -1,7 +1,5 @@
 package info.jbcs.minecraft.waypoints;
 
-import info.jbcs.minecraft.gui.GuiExButton;
-import info.jbcs.minecraft.gui.TexturedBox;
 import net.minecraftforge.common.DimensionManager;
 
 public class GuiWaypointButton extends GuiExButton {

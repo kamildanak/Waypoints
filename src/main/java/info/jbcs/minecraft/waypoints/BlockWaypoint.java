@@ -1,31 +1,40 @@
 package info.jbcs.minecraft.waypoints;
 
-import info.jbcs.minecraft.utilities.packets.PacketData;
+import cpw.mods.fml.common.network.ByteBufUtils;
+import cpw.mods.fml.common.network.internal.FMLProxyPacket;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IconRegister;
+import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.util.Icon;
+import net.minecraft.init.Blocks;
+import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import org.lwjgl.Sys;
 
 public class BlockWaypoint extends Block {
-	Icon topIcon,sideIcon;
-	Icon sideIcons[]=new Icon[2];
-	Icon topIcons[]=new Icon[4];
+	IIcon topIcon,sideIcon;
+	IIcon sideIcons[]=new IIcon[2];
+	IIcon topIcons[]=new IIcon[4];
 	
-	public BlockWaypoint(int id) {
-		super(id, Material.rock);
+	public BlockWaypoint() {
+		super(Material.rock);
+        setBlockName("waypoint");
+        this.setCreativeTab(CreativeTabs.tabTransport);
 		setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.5F, 1.0F);
 		setLightOpacity(255);
-		
-		useNeighborBrightness[blockID]=true;
+        this.setLightOpacity(0);
+
+        this.setResistance(10F).setStepSound(Blocks.stone.stepSound).setHardness(2.0F);
+
 	}
 
 	@Override
@@ -34,25 +43,25 @@ public class BlockWaypoint extends Block {
 	}
 	
 	public boolean isValidWaypoint(World world, int ox, int oy, int oz){
-		if(world.getBlockId(ox+0,oy,oz+0)!=blockID) return false;
-		if(world.getBlockId(ox+1,oy,oz+0)!=blockID) return false;
-		if(world.getBlockId(ox+0,oy,oz+1)!=blockID) return false;
-		if(world.getBlockId(ox+1,oy,oz+1)!=blockID) return false;
+		if(world.getBlock(ox+0,oy,oz+0)!=this) return false;
+		if(world.getBlock(ox+1,oy,oz+0)!=this) return false;
+		if(world.getBlock(ox+0,oy,oz+1)!=this) return false;
+		if(world.getBlock(ox+1,oy,oz+1)!=this) return false;
 		if(world.getBlockMetadata(ox+0,oy,oz+0)!=1) return false;
 		if(world.getBlockMetadata(ox+1,oy,oz+0)!=2) return false;
 		if(world.getBlockMetadata(ox+0,oy,oz+1)!=3) return false;
 		if(world.getBlockMetadata(ox+1,oy,oz+1)!=4) return false;
 		
-		return true;   		
+		return true;
 	}
 	
 
     @Override
-	public void breakBlock(World world, int x, int y, int z, int oldId, int oldMeta){
-    	super.breakBlock(world, x, y, z, oldId, oldMeta);
+	public void breakBlock(World world, int x, int y, int z, Block oldBlock, int oldMeta){
+    	super.breakBlock(world, x, y, z, oldBlock, oldMeta);
     	
-		while(world.getBlockId(x-1,y,z)==blockID) x--;
-		while(world.getBlockId(x,y,z-1)==blockID) z--;
+		while(world.getBlock(x - 1, y, z)==this) x--;
+		while(world.getBlock(x, y, z - 1)==this) z--;
    	
 		final Waypoint wp=Waypoint.getWaypoint(x,y,z,world.provider.dimensionId);
 		if(wp==null) return;
@@ -74,8 +83,8 @@ public class BlockWaypoint extends Block {
 	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int par6, float par7, float par8, float par9) {
 		if(world.isRemote) return true;
    	
-		while(world.getBlockId(x-1,y,z)==blockID) x--;
-		while(world.getBlockId(x,y,z-1)==blockID) z--;
+		while(world.getBlock(x - 1, y, z)==this) x--;
+		while(world.getBlock(x, y, z - 1)==this) z--;
 		
 		if(! isValidWaypoint(world,x,y,z)) return true;
 		
@@ -85,27 +94,32 @@ public class BlockWaypoint extends Block {
 		if(! isPlayerOnWaypoint(world,x,y,z,player)) return true;
 		
 		if(src.name.isEmpty()){
-			Packets.waypointName.sendToPlayer((EntityPlayerMP) player, new PacketData(){
-				@Override
-				public void data(DataOutputStream stream) throws IOException {
-					stream.writeInt(src.id);
-					Packet.writeString("Waypoint #"+src.id,stream);
-				}
-			});
+            int type = 2;
+            ByteBuf buffer = Unpooled.buffer();
+            buffer.writeInt(type);
+            buffer.writeInt(src.id);
+            ByteBufUtils.writeUTF8String(buffer, "Waypoint #" + src.id);
+            FMLProxyPacket packet = new FMLProxyPacket(buffer.copy(), "Waypoints");
+
+            Waypoints.Channel.sendTo(packet, (EntityPlayerMP) player);
 		} else{
-			Packets.sendWaypointsToPlayer((EntityPlayerMP) player, src.id);
-		}
+            try {
+                Packets.sendWaypointsToPlayer((EntityPlayerMP) player, src.id);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 		
 		return true;
 	}
 	
     @Override
-	public Icon getIcon(int side, int meta){
+	public IIcon getIcon(int side, int meta){
         return side<2?topIcon:sideIcon;
     }
 
     @Override
-	public Icon getBlockTexture(IBlockAccess world, int x, int y, int z, int side){
+	public IIcon getIcon(IBlockAccess world, int x, int y, int z, int side){
     	int meta=world.getBlockMetadata(x, y, z);
     	
     	if(meta==0) return this.getIcon(side,0);
@@ -148,7 +162,7 @@ public class BlockWaypoint extends Block {
 	}
 
     @Override
-	public void registerIcons(IconRegister reg){
+	public void registerBlockIcons(IIconRegister reg){
     	topIcon=reg.registerIcon("waypoints:waypoint-top");
         sideIcon=reg.registerIcon("waypoints:waypoint-side");
         topIcons[0]=reg.registerIcon("waypoints:waypoint-top-a");
