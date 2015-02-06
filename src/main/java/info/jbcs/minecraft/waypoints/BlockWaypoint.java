@@ -22,8 +22,8 @@ import org.lwjgl.Sys;
 
 public class BlockWaypoint extends Block {
 	IIcon topIcon,sideIcon;
-	IIcon sideIcons[]=new IIcon[2];
-	IIcon topIcons[]=new IIcon[4];
+	IIcon sideIcons[]=new IIcon[3];
+	IIcon topIcons[]=new IIcon[9];
 	
 	public BlockWaypoint() {
 		super(Material.rock);
@@ -43,37 +43,38 @@ public class BlockWaypoint extends Block {
 	}
 	
 	public boolean isValidWaypoint(World world, int ox, int oy, int oz){
-		if(world.getBlock(ox+0,oy,oz+0)!=this) return false;
-		if(world.getBlock(ox+1,oy,oz+0)!=this) return false;
-		if(world.getBlock(ox+0,oy,oz+1)!=this) return false;
-		if(world.getBlock(ox+1,oy,oz+1)!=this) return false;
-		if(world.getBlockMetadata(ox+0,oy,oz+0)!=1) return false;
-		if(world.getBlockMetadata(ox+1,oy,oz+0)!=2) return false;
-		if(world.getBlockMetadata(ox+0,oy,oz+1)!=3) return false;
-		if(world.getBlockMetadata(ox+1,oy,oz+1)!=4) return false;
+        if(checkSize(world, ox, oy, oz)==1) return false;
+		if(world.getBlock(ox,oy,oz)!=this) return false; //checkSize do not check this one
+        //here we can check metadata it _should_ be always true so let omit this until some bug happen
 		
 		return true;
 	}
-	
-
     @Override
 	public void breakBlock(World world, int x, int y, int z, Block oldBlock, int oldMeta){
-    	super.breakBlock(world, x, y, z, oldBlock, oldMeta);
-    	
+        super.breakBlock(world, x, y, z, oldBlock, oldMeta);
+        int size = checkSize(world, x, y, z);
 		while(world.getBlock(x - 1, y, z)==this) x--;
 		while(world.getBlock(x, y, z - 1)==this) z--;
-   	
+
 		final Waypoint wp=Waypoint.getWaypoint(x,y,z,world.provider.dimensionId);
+
+
+        for(int px=0; px<size; px++){
+            for(int pz=0; pz<size; pz++){
+                world.setBlockMetadataWithNotify(x+px,y,z+pz,0,3);
+            }
+        }
+
 		if(wp==null) return;
-		
-		Waypoint.removeWaypoint(wp);
+        Waypoint.removeWaypoint(wp);
     }
     
     static public boolean isPlayerOnWaypoint(World world, int x, int y, int z, EntityPlayer player){
-		if(player.posX<x) return false;
-		if(player.posX>x+2) return false;
+        int size = checkSize(world, x, y, z);
+        if(player.posX<x) return false;
+		if(player.posX>x+size) return false;
 		if(player.posZ<z) return false;
-		if(player.posZ>z+2) return false;
+		if(player.posZ>z+size) return false;
 		
 		return true;
     }
@@ -82,12 +83,14 @@ public class BlockWaypoint extends Block {
 	@Override
 	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int par6, float par7, float par8, float par9) {
 		if(world.isRemote) return true;
-   	
+
 		while(world.getBlock(x - 1, y, z)==this) x--;
 		while(world.getBlock(x, y, z - 1)==this) z--;
-		
+
+        activateStructure(world, x, y, z);
+
 		if(! isValidWaypoint(world,x,y,z)) return true;
-		
+
 		final Waypoint src=Waypoint.getWaypoint(x,y,z,player.dimension);
 		if(src==null) return true;
 
@@ -109,9 +112,66 @@ public class BlockWaypoint extends Block {
                 e.printStackTrace();
             }
         }
-		
 		return true;
 	}
+    static public int checkSize(World world, int ox, int oy, int oz){
+        int x = ox;
+        int z = oz;
+        while(world.getBlock(ox - 1, oy, oz)==Waypoints.blockWaypoint) ox--;
+        while(world.getBlock(ox, oy, oz - 1)==Waypoints.blockWaypoint) oz--;
+        outerloop:
+        for(int px=0; px<3; px++){
+            for(int pz=0; pz<3; pz++){
+                if((world.getBlock(ox+px, oy, oz+pz)==Waypoints.blockWaypoint || (ox+px==x && oz+pz==z)) && px==2 && pz==2) {
+                    return 3;
+                }
+                if(world.getBlock(ox+px, oy, oz+pz)!=Waypoints.blockWaypoint && !((ox+px)==x && (oz+pz)==z)) {
+                    break outerloop;
+                }
+            }
+        }
+        outerloop:
+        for(int px=0; px<2; px++){
+            for(int pz=0; pz<2; pz++){
+                if((world.getBlock(ox+px, oy, oz+pz)==Waypoints.blockWaypoint || (ox+px==x && oz+pz==z)) && px==1 && pz==1) {
+                    return 2;
+                }
+                if(world.getBlock(ox+px, oy, oz+pz)!=Waypoints.blockWaypoint && !((ox+px)==x && (oz+pz)==z)) {
+                    break outerloop;
+                }
+            }
+        }
+        return 1;
+    }
+
+    public void activateStructure(World world, int ox, int oy, int oz){
+        if(checkSize(world, ox, oy, oz)==3 && world.getBlock(ox, oy, oz)==this){
+            world.setBlockMetadataWithNotify(ox+0,oy,oz+0,1,3);
+            world.setBlockMetadataWithNotify(ox+1,oy,oz+0,2,3);
+            world.setBlockMetadataWithNotify(ox+2,oy,oz+0,3,3);
+            world.setBlockMetadataWithNotify(ox+2,oy,oz+1,4,3);
+            world.setBlockMetadataWithNotify(ox+2,oy,oz+2,5,3);
+            world.setBlockMetadataWithNotify(ox+1,oy,oz+2,6,3);
+            world.setBlockMetadataWithNotify(ox+0,oy,oz+2,7,3);
+            world.setBlockMetadataWithNotify(ox+0,oy,oz+1,8,3);
+            world.setBlockMetadataWithNotify(ox+1,oy,oz+1,9,3);
+        }
+        ox--;
+        oz--;
+        for(int xp=0; xp<4; xp++){
+            for(int zp=0; zp<4; zp++){
+                if((xp==0 | xp==3 | zp==0 | zp==3)&& xp!=zp && !(xp==0 && zp ==3) && !(xp==3 && zp==0)){
+                    if(world.getBlock(ox+xp,oy,oz+zp)==this) return;
+                }else if(!(xp==0 | xp==3 | zp==0 | zp==3)){
+                    if(world.getBlock(ox+xp,oy,oz+zp)!=this) return;
+                }
+            }
+        }
+        world.setBlockMetadataWithNotify(ox+1,oy,oz+1,1,3);
+        world.setBlockMetadataWithNotify(ox+2,oy,oz+1,3,3);
+        world.setBlockMetadataWithNotify(ox+2,oy,oz+2,5,3);
+        world.setBlockMetadataWithNotify(ox+1,oy,oz+2,7,3);
+    }
 	
     @Override
 	public IIcon getIcon(int side, int meta){
@@ -124,33 +184,43 @@ public class BlockWaypoint extends Block {
     	
     	if(meta==0) return this.getIcon(side,0);
     	
-    	switch(((meta-1)&3)|(side<<2)){
-    	case 0|(0<<2):
-    	case 0|(1<<2): return topIcons[1];
-    	case 1|(0<<2):
-    	case 1|(1<<2): return topIcons[2];
-    	case 2|(0<<2):
-    	case 2|(1<<2): return topIcons[0];
-    	case 3|(0<<2):
-    	case 3|(1<<2): return topIcons[3];
-    	
-    	case 0|(2<<2): return sideIcons[1];
-    	case 0|(3<<2): return sideIcons[0];
-    	case 1|(2<<2): return sideIcons[0];
-    	case 1|(3<<2): return sideIcons[1];
-    	case 2|(2<<2): return sideIcons[1];
-    	case 2|(3<<2): return sideIcons[0];
-    	case 3|(2<<2): return sideIcons[0];
-    	case 3|(3<<2): return sideIcons[1];
-    	
-    	case 0|(4<<2): return sideIcons[0];
-    	case 0|(5<<2): return sideIcons[1];
-       	case 1|(4<<2): return sideIcons[0];
-    	case 1|(5<<2): return sideIcons[1];
-    	case 2|(4<<2): return sideIcons[1];
-    	case 2|(5<<2): return sideIcons[0];
-    	case 3|(4<<2): return sideIcons[1];
-    	case 3|(5<<2): return sideIcons[0];
+    	switch(side){
+
+            case 0:
+            case 1:
+                return topIcons[(meta-1)%9];
+            case 2:
+            case 3:
+                switch((meta-1)%9){
+                    case 1:
+                    case 3:
+                    case 5:
+                    case 7:
+                    case 8:
+                        return sideIcons[2];
+                    case 0:
+                    case 4:
+                        return sideIcons[1];
+                    case 2:
+                    case 6:
+                        return sideIcons[0];
+                }
+            case 4:
+            case 5:
+                switch((meta-1)%9){
+                    case 1:
+                    case 3:
+                    case 5:
+                    case 7:
+                    case 8:
+                        return sideIcons[2];
+                    case 0:
+                    case 4:
+                        return sideIcons[0];
+                    case 2:
+                    case 6:
+                        return sideIcons[1];
+                }
     	}
     	
     	return topIcon;
@@ -165,12 +235,18 @@ public class BlockWaypoint extends Block {
 	public void registerBlockIcons(IIconRegister reg){
     	topIcon=reg.registerIcon("waypoints:waypoint-top");
         sideIcon=reg.registerIcon("waypoints:waypoint-side");
-        topIcons[0]=reg.registerIcon("waypoints:waypoint-top-a");
-        topIcons[1]=reg.registerIcon("waypoints:waypoint-top-b");
+        topIcons[6]=reg.registerIcon("waypoints:waypoint-top-a");
+        topIcons[7]=reg.registerIcon("waypoints:waypoint-top-ab");
+        topIcons[0]=reg.registerIcon("waypoints:waypoint-top-b");
+        topIcons[1]=reg.registerIcon("waypoints:waypoint-top-bc");
         topIcons[2]=reg.registerIcon("waypoints:waypoint-top-c");
-        topIcons[3]=reg.registerIcon("waypoints:waypoint-top-d");
+        topIcons[3]=reg.registerIcon("waypoints:waypoint-top-cd");
+        topIcons[4]=reg.registerIcon("waypoints:waypoint-top-d");
+        topIcons[5]=reg.registerIcon("waypoints:waypoint-top-da");
+        topIcons[8]=reg.registerIcon("waypoints:waypoint-top-m");
         sideIcons[0]=reg.registerIcon("waypoints:waypoint-side-a");
         sideIcons[1]=reg.registerIcon("waypoints:waypoint-side-b");
+        sideIcons[2]=reg.registerIcon("waypoints:waypoint-side-m");
     }
 
     
