@@ -21,6 +21,7 @@ public class Waypoint {
 	public int id;
 	public int x,y,z,dimension;
 	String name;
+    int linked_id;
 	
 	static HashMap<String,Waypoint> waypointsLocationMap=new HashMap<String,Waypoint>();
 	static Waypoint waypoints[]=new Waypoint[0x400];
@@ -50,6 +51,7 @@ public class Waypoint {
 		stream.writeInt(z);
 		stream.writeInt(dimension);
         ByteBufUtils.writeUTF8String(stream, name);
+        stream.writeInt(linked_id);
 	}
 	
 	void read(ByteBuf stream) throws IOException{
@@ -61,6 +63,7 @@ public class Waypoint {
 		z=stream.readInt();
 		dimension=stream.readInt();
         name=ByteBufUtils.readUTF8String(stream);
+        linked_id=stream.readInt();
 	}
 
 	void write(NBTTagCompound tag){
@@ -70,6 +73,7 @@ public class Waypoint {
 		tag.setInteger("z",z);
 		tag.setInteger("dim",dimension);
 		tag.setString("name", name);
+        tag.setInteger("linked_id", linked_id);
 	}
 
 	void read(NBTTagCompound tag){
@@ -77,6 +81,7 @@ public class Waypoint {
 		
 		initialize(tag.getInteger("id"),tag.getInteger("x"),tag.getInteger("y"),tag.getInteger("z"),tag.getInteger("dim"));
 		name=tag.getString("name");
+        linked_id=tag.getInteger("linked_id");
 	}
 
 	public static String locKey(int x,int y,int z,int dimension){
@@ -96,7 +101,7 @@ public class Waypoint {
 		
 		changed=true;
 	}
-	
+
 	void initialize(int id,int x,int y,int z,int dimension){
 		String key=locKey(x,y,z,dimension);
 
@@ -133,7 +138,7 @@ public class Waypoint {
 	public static void write(File file) throws IOException {
 		if(! changed) return;
 		changed=false;
-		
+
 		int index=0;
 		NBTTagCompound tag=new NBTTagCompound();
 		tag.setInteger("count", existingWaypoints.size());

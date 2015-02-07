@@ -97,7 +97,6 @@ public class BlockWaypoint extends Block {
 		if(src==null) return true;
 
 		if(! isPlayerOnWaypoint(world,x,y,z,player)) return true;
-		
 		if(src.name.isEmpty()){
             int type = 2;
             ByteBuf buffer = Unpooled.buffer();
@@ -107,7 +106,35 @@ public class BlockWaypoint extends Block {
             FMLProxyPacket packet = new FMLProxyPacket(buffer.copy(), "Waypoints");
 
             Waypoints.Channel.sendTo(packet, (EntityPlayerMP) player);
-		} else{
+		}else if(player.isSneaking() && (Waypoints.allowActivation || isOP)){
+            int type = 4;
+
+            ByteBuf buffer = Unpooled.buffer();
+            buffer.writeInt(type);
+            buffer.writeInt(src.id);
+            ByteBufUtils.writeUTF8String(buffer, src.name);
+            buffer.writeInt(src.linked_id);
+            //Add waypoints
+            final WaypointPlayerInfo info=WaypointPlayerInfo.get(player.getDisplayName());
+            int count=0;
+            for(Waypoint w: Waypoint.existingWaypoints)
+                if(info.discoveredWaypoints.containsKey(w.id))
+                    count++;
+
+            buffer.writeInt(count);
+
+            for(Waypoint w: Waypoint.existingWaypoints)
+                if(info.discoveredWaypoints.containsKey(w.id))
+                    try {
+                        w.write(buffer);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+            FMLProxyPacket packet = new FMLProxyPacket(buffer.copy(), "Waypoints");
+
+            Waypoints.Channel.sendTo(packet, (EntityPlayerMP) player);
+        }else{
             try {
                 Packets.sendWaypointsToPlayer((EntityPlayerMP) player, src.id);
             } catch (IOException e) {

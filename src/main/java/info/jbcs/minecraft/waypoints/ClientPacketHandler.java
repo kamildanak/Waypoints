@@ -52,6 +52,11 @@ public class ClientPacketHandler extends ServerPacketHandler{
                     }
                 }
             }
+        }else if(type == 4){
+            int id = bbis.readInt();
+            String name = ByteBufUtils.readUTF8String(bbis);
+            Integer linked_id = bbis.readInt();
+            FMLCommonHandler.instance().showGuiScreen(new GuiEditWaypoint(id, name, linked_id, player, bbis));
         }
     }
 

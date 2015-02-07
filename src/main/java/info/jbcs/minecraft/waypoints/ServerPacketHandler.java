@@ -59,8 +59,8 @@ public class ServerPacketHandler {
                 buffer.writeDouble(player.posY);
                 buffer.writeDouble(player.posZ);
                 FMLProxyPacket packet = new FMLProxyPacket(buffer.copy(), "Waypoints");
-                Waypoints.Channel.sendToAllAround(packet1, new NetworkRegistry.TargetPoint(player.dimension, player.posX, player.posY, player.posZ, 100));
-                Waypoints.Channel.sendToAllAround(packet, new NetworkRegistry.TargetPoint(player.dimension, player.posX, player.posY, player.posZ, 100));
+                Waypoints.Channel.sendToAllAround(packet1, new NetworkRegistry.TargetPoint(player.dimension, player.posX, player.posY, player.posZ, 25));
+                Waypoints.Channel.sendToAllAround(packet, new NetworkRegistry.TargetPoint(player.dimension, player.posX, player.posY, player.posZ, 25));
 
                 break;
             case 1:
@@ -78,6 +78,11 @@ public class ServerPacketHandler {
                 info1.addWaypoint(src.id);
 
                 Packets.sendWaypointsToPlayer((EntityPlayerMP) player, src.id);
+                break;
+            case 3:
+                src.name = ByteBufUtils.readUTF8String(bbis);
+                src.linked_id = bbis.readInt();
+                src.changed = true;
                 break;
         }
     }
