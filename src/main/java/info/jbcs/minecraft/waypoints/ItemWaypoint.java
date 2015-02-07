@@ -49,25 +49,14 @@ public class ItemWaypoint extends ItemBlock {
             boolean ezmmm=world.getBlock(x, y, z - 3)==blockWaypoint;
 
             int mexp=world.getBlockMetadata(x + 1, y, z);
-            int mexpp=world.getBlockMetadata(x + 2, y, z);
-            int mexppp=world.getBlockMetadata(x + 3, y, z);
             int mexm=world.getBlockMetadata(x - 1, y, z);
-            int mexmm=world.getBlockMetadata(x - 2, y, z);
-            int mexmmm=world.getBlockMetadata(x - 3, y, z);
             int mezp=world.getBlockMetadata(x, y, z + 1);
-            int mezpp=world.getBlockMetadata(x, y, z + 2);
-            int mezppp=world.getBlockMetadata(x, y, z + 3);
             int mezm=world.getBlockMetadata(x, y, z - 1);
-            int mezmm=world.getBlockMetadata(x, y, z - 2);
-            int mezmmm=world.getBlockMetadata(x, y, z - 3);
 
 
             if((exp && expp && exppp) || (exp && expp && exm) || (exp && exm && exmm) || (exm && exmm && exmmm)) return false;
             if((ezp && ezpp && ezppp) || (ezp && ezpp && ezm) || (ezp && ezm && ezmm) || (ezm && ezmm && ezmmm)) return false;
-            if((mexp!=0 && exp) || (mexpp!=0 && expp) || (mexppp!=0 && exppp) || (mexm!=0 && exm) ||
-                    (mexmm!=0 && exmm) || (mexmmm!=0 && exmmm)) return false;
-            if((mezp!=0 && ezp) || (mezpp!=0 && ezpp) || (mezppp!=0 && ezppp) || (mezm!=0 && ezm) ||
-                    (mezmm!=0 && ezmm) || (mezmmm!=0 && ezmmm)) return false;
+            if((mexp!=0 && exp) || (mexm!=0 && exm) || (mezp!=0 && ezp) || (mezm!=0 && ezm)) return false;
 
             Block block = blockWaypoint;
             int oldMeta = this.getMetadata(stack.getItemDamage());
