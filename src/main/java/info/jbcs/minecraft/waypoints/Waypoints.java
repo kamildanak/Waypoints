@@ -9,8 +9,10 @@ import cpw.mods.fml.common.network.NetworkRegistry;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.CraftingManager;
+import net.minecraft.item.crafting.ShapedRecipes;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.ISaveHandler;
 import net.minecraft.world.storage.SaveHandler;
@@ -25,6 +27,8 @@ import cpw.mods.fml.common.Mod.EventHandler;
 public class Waypoints{
     static Configuration config;
 	public static boolean compactView;
+    public static String default_recipe = "3x2,minecraft:stone:1,minecraft:stone:1,minecraft:stone:1,minecraft:stone:1,minecraft:ender_pearl:1,minecraft:stone:1";
+    public static String recipe;
     public static FMLEventChannel Channel;
 	
 	public static BlockWaypoint blockWaypoint;
@@ -57,11 +61,8 @@ public class Waypoints{
         GameRegistry.registerBlock(blockWaypoint, ItemWaypoint.class, "waypoint");
 		
 		compactView=config.get("general", "compact view", true, "Only show one line in Waypoint GUI, in order to fit more waypoints on the screen").getBoolean(true);
-
-		CraftingManager.getInstance().addRecipe(new ItemStack(blockWaypoint, 1),
-                new Object[] { "***", "*X*",
-                        '*', new ItemStack(Blocks.stone, 1),
-                        'X', new ItemStack(Items.ender_pearl, 1)});
+        recipe=config.get("general", "recipe", default_recipe, "You can change crafting recipe here").getString();
+        addRecipe(new ItemStack(blockWaypoint, 1), recipe);
 
         MinecraftForge.EVENT_BUS.register(this);
         config.save();
@@ -107,6 +108,60 @@ public class Waypoints{
 			e.printStackTrace();
 		}
 	}
+    public void addRecipe(ItemStack itemStack, String string){
+        String[] string_array = string.split(",");
+        String[] itemstr;
+        ItemStack[] itemstack_array = new ItemStack[9];
+        int recipe_column = Integer.parseInt(string_array[0].split("x")[0]);
+        int recipe_row = Integer.parseInt(string_array[0].split("x")[1]);
+        String a="",b="",c = "";
+        for(int i=0; i<recipe_row; i++){
+            for(int j=0; j<recipe_column; j++){
+                itemstr = string_array[i * recipe_column + j + 1].split(":");
+                if(!(itemstr.length<3)) {
+                    itemstack_array[i * recipe_column + j] = GameRegistry.findItemStack(itemstr[0], itemstr[1], Integer.parseInt(itemstr[2]));
+                    if(i==0) a+= Character.toString ((char) (i*recipe_column+j+65));
+                    if(i==1) b+= Character.toString ((char) (i*recipe_column+j+65));
+                    if(i==2) c+= Character.toString ((char) (i*recipe_column+j+65));
+                }else{
+                    itemstack_array[i * recipe_column + j] = null;
+                    if(i==0) a+= " ";
+                    if(i==1) b+= " ";
+                    if(i==2) c+= " ";
+                }
+            }
+        }
+        if(recipe_row==1)
+            CraftingManager.getInstance().addRecipe(itemStack,
+                    a,
+                    (char) 65, itemstack_array[0],
+                    (char) 66, itemstack_array[1],
+                    (char) 67, itemstack_array[2]
+            );
+        if(recipe_row==2)
+            CraftingManager.getInstance().addRecipe(itemStack,
+                    a, b,
+                    (char) 65, itemstack_array[0],
+                    (char) 66, itemstack_array[1],
+                    (char) 67, itemstack_array[2],
+                    (char) 68, itemstack_array[3],
+                    (char) 69, itemstack_array[4],
+                    (char) 70, itemstack_array[5]
+            );
+        if(recipe_row==3)
+            CraftingManager.getInstance().addRecipe(itemStack,
+                    a, b, c,
+                    (char) 65, itemstack_array[0],
+                    (char) 66, itemstack_array[1],
+                    (char) 67, itemstack_array[2],
+                    (char) 68, itemstack_array[3],
+                    (char) 69, itemstack_array[4],
+                    (char) 70, itemstack_array[5],
+                    (char) 71, itemstack_array[6],
+                    (char) 72, itemstack_array[7],
+                    (char) 73, itemstack_array[8]
+            );
+    }
 
 }
 
