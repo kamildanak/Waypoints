@@ -15,6 +15,7 @@ import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
@@ -45,6 +46,7 @@ public class BlockWaypoint extends Block {
 	public boolean isValidWaypoint(World world, int ox, int oy, int oz){
         if(checkSize(world, ox, oy, oz)==1) return false;
 		if(world.getBlock(ox,oy,oz)!=this) return false; //checkSize do not check this one
+        if(world.getBlockMetadata(ox,oy,oz)==0) return false; //check if activated
         //here we can check metadata it _should_ be always true so let omit this until some bug happen
 		
 		return true;
@@ -86,8 +88,8 @@ public class BlockWaypoint extends Block {
 
 		while(world.getBlock(x - 1, y, z)==this) x--;
 		while(world.getBlock(x, y, z - 1)==this) z--;
-
-        activateStructure(world, x, y, z);
+        boolean isOP=MinecraftServer.getServer().getConfigurationManager().func_152596_g(player.getGameProfile());
+        if(Waypoints.allowActivation || isOP) activateStructure(world, x, y, z);
 
 		if(! isValidWaypoint(world,x,y,z)) return true;
 

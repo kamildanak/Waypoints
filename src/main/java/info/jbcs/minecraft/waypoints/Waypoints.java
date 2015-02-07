@@ -29,6 +29,8 @@ public class Waypoints{
 	public static boolean compactView;
     public static String default_recipe = "3x2,minecraft:stone:1,minecraft:stone:1,minecraft:stone:1,minecraft:stone:1,minecraft:ender_pearl:1,minecraft:stone:1";
     public static String recipe;
+    public static boolean craftable;
+    public static boolean allowActivation;
     public static FMLEventChannel Channel;
 	
 	public static BlockWaypoint blockWaypoint;
@@ -60,10 +62,11 @@ public class Waypoints{
 		blockWaypoint = new BlockWaypoint();
         GameRegistry.registerBlock(blockWaypoint, ItemWaypoint.class, "waypoint");
 		
-		compactView=config.get("general", "compact view", true, "Only show one line in Waypoint GUI, in order to fit more waypoints on the screen").getBoolean(true);
+		compactView=config.get("general", "compact view", true, "Only show one line in Waypoint GUI, in order to fit more waypoints on the screen").getBoolean();
         recipe=config.get("general", "recipe", default_recipe, "You can change crafting recipe here").getString();
-        addRecipe(new ItemStack(blockWaypoint, 1), recipe);
-
+        craftable=config.get("general", "craftable", true, "Set to false to completely disable crafting recipe").getBoolean();
+        if(craftable) addRecipe(new ItemStack(blockWaypoint, 1), recipe);
+        allowActivation=config.get("general", "can_no_ops_activate", true, "If set to false only ops can enable Waypoins").getBoolean();
         MinecraftForge.EVENT_BUS.register(this);
         config.save();
 	}
