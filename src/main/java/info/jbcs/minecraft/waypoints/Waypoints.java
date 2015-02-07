@@ -23,7 +23,7 @@ import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.common.Mod.EventHandler;
 
-@Mod(modid="Waypoints", name="Waypoints", version="1.1.0")
+@Mod(modid="Waypoints", name="Waypoints", version="1.1.1")
 public class Waypoints{
     static Configuration config;
 	public static boolean compactView;
