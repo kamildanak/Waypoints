@@ -1,9 +1,12 @@
 package info.jbcs.minecraft.waypoints;
 
 import cpw.mods.fml.common.network.ByteBufUtils;
+import cpw.mods.fml.common.network.NetworkRegistry;
+import cpw.mods.fml.common.network.internal.FMLProxyPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ReadOnlyByteBuf;
+import io.netty.buffer.Unpooled;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.Container;
@@ -38,9 +41,27 @@ public class ServerPacketHandler {
         switch(action){
             case 0:
                 player.mountEntity((Entity)null);
+                ByteBuf buffer1 = Unpooled.buffer();
+                buffer1.writeInt(3);
+                buffer1.writeDouble(player.posX);
+                buffer1.writeDouble(player.posY);
+                buffer1.writeDouble(player.posZ);
+                FMLProxyPacket packet1 = new FMLProxyPacket(buffer1.copy(), "Waypoints");
+
                 if(player.dimension!=w.dimension) player.travelToDimension(w.dimension);
-                player.setLocationAndAngles(w.x+1.1, w.y+0.5, w.z+1.1, player.rotationYaw, 0);
-                player.setPositionAndUpdate(w.x+1.1, w.y+0.5, w.z+1.1);
+                int size = BlockWaypoint.checkSize(player.worldObj, w.x, w.y, w.z);
+                player.setLocationAndAngles(w.x+size/2.0, w.y+0.5, w.z+size/2.0, player.rotationYaw, 0);
+                player.setPositionAndUpdate(w.x+size/2.0, w.y+0.5, w.z+size/2.0);
+
+                ByteBuf buffer = Unpooled.buffer();
+                buffer.writeInt(3);
+                buffer.writeDouble(player.posX);
+                buffer.writeDouble(player.posY);
+                buffer.writeDouble(player.posZ);
+                FMLProxyPacket packet = new FMLProxyPacket(buffer.copy(), "Waypoints");
+                Waypoints.Channel.sendToAllAround(packet1, new NetworkRegistry.TargetPoint(player.dimension, player.posX, player.posY, player.posZ, 100));
+                Waypoints.Channel.sendToAllAround(packet, new NetworkRegistry.TargetPoint(player.dimension, player.posX, player.posY, player.posZ, 100));
+
                 break;
             case 1:
                 WaypointPlayerInfo info=WaypointPlayerInfo.get(player.getDisplayName());
