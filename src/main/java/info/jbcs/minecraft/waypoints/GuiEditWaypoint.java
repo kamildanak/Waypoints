@@ -85,7 +85,6 @@ public class GuiEditWaypoint extends GuiScreenPlus {
         refreshLinked();
     }
     public void refreshLinked(){
-        System.out.print(linkedId-1);
         if(Waypoint.getWaypoint(linkedId-1)!=null) {
             select_button.caption = Waypoint.getWaypoint(linkedId-1).name;
         }else{

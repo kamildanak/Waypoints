@@ -45,10 +45,10 @@ public class GuiWaypoints extends GuiScreenPlus {
 						
 						return;
 					}
-					
+
 					for(GuiWaypointButton button: waypointButtons)
 						button.selected=button==this;
-					
+
 					selectedButton=this;
 				}
 			});

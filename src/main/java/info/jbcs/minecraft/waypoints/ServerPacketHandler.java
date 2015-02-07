@@ -32,7 +32,7 @@ public class ServerPacketHandler {
         Waypoint src=Waypoint.getWaypoint(currentWaypointId);
         if(src==null) return;
 
-        if(! BlockWaypoint.isPlayerOnWaypoint(player.worldObj,src.x,src.y,src.z,player))
+        if(! BlockWaypoint.isEntityOnWaypoint(player.worldObj,src.x,src.y,src.z,player))
             return;
 
         Waypoint w=Waypoint.getWaypoint(destinationWaypointId);

@@ -57,14 +57,6 @@ public class GuiPickWaypoint extends GuiScreenPlus {
 					selectedButton=this;
 				}
 			});
-			
-			if(w.id==currentWaypointId){
-				button.selected=true;
-				selectedButton=button;
-				
-				scroller.offset=50-buttonHeight*waypointButtons.size();
-			}
-			
 			waypointButtons.add(button);
 		}
 		

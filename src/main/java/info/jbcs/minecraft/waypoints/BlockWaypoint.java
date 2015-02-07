@@ -1,10 +1,12 @@
 package info.jbcs.minecraft.waypoints;
 
 import cpw.mods.fml.common.network.ByteBufUtils;
+import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.network.internal.FMLProxyPacket;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Random;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -12,6 +14,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
@@ -71,12 +74,12 @@ public class BlockWaypoint extends Block {
         Waypoint.removeWaypoint(wp);
     }
     
-    static public boolean isPlayerOnWaypoint(World world, int x, int y, int z, EntityPlayer player){
+    static public boolean isEntityOnWaypoint(World world, int x, int y, int z, Entity entity){
         int size = checkSize(world, x, y, z);
-        if(player.posX<x) return false;
-		if(player.posX>x+size) return false;
-		if(player.posZ<z) return false;
-		if(player.posZ>z+size) return false;
+        if(entity.posX<x) return false;
+		if(entity.posX>x+size) return false;
+		if(entity.posZ<z) return false;
+		if(entity.posZ>z+size) return false;
 		
 		return true;
     }
@@ -96,7 +99,7 @@ public class BlockWaypoint extends Block {
 		final Waypoint src=Waypoint.getWaypoint(x,y,z,player.dimension);
 		if(src==null) return true;
 
-		if(! isPlayerOnWaypoint(world,x,y,z,player)) return true;
+		if(! isEntityOnWaypoint(world, x, y, z, player)) return true;
 		if(src.name.isEmpty()){
             int type = 2;
             ByteBuf buffer = Unpooled.buffer();
@@ -278,6 +281,74 @@ public class BlockWaypoint extends Block {
         sideIcons[2]=reg.registerIcon("waypoints:waypoint-side-m");
     }
 
-    
+    @Override
+    public void randomDisplayTick(World world, int ox, int oy, int oz, Random rand) {
+        BlockWaypoint blockWaypoint = (BlockWaypoint) world.getBlock(ox,oy,oz);
+        if(blockWaypoint.isPowered(world, ox, oy, oz) && blockWaypoint.isValidWaypoint(world, ox, oy, oz)) {
+            float fx = (float)ox + 0.5F;
+            float fy = (float)oy + 1.0F + rand.nextFloat() * 6.0F / 16.0F;
+            float fz = (float)oz + 0.5F;
+            while(world.getBlock(ox - 1, oy, oz)==Waypoints.blockWaypoint) ox--;
+            while(world.getBlock(ox, oy, oz - 1)==Waypoints.blockWaypoint) oz--;
+
+            Waypoint w = Waypoint.getWaypoint(Waypoint.getWaypoint(ox, oy, oz, world.provider.dimensionId).linked_id - 1);
+            if(w==null) return;
+            if(isPowered(world, w.x, w.y, w.z)) return;
+            world.spawnParticle("portal", (double) fx + rand.nextFloat()%1-0.5, (double) fy, (double) fz + rand.nextFloat()%1-0.5, 0.0D, 0.0D, 0.0D);
+            world.spawnParticle("portal", (double) fx, (double) fy, (double) fz, 0.0D, 0.0D, 0.0D);
+        }
+    }
+
+    public boolean isPowered(World world, int ox, int oy, int oz){
+        while(world.getBlock(ox - 1, oy, oz)==Waypoints.blockWaypoint) ox--;
+        while(world.getBlock(ox, oy, oz - 1)==Waypoints.blockWaypoint) oz--;
+
+        int size = checkSize(world, ox, oy, oz);
+        for(int xp=0; xp<size; xp++){
+            for(int zp=0; zp<size; zp++) {
+                if (world.isBlockIndirectlyGettingPowered(ox + xp, oy, oz + zp)) return true;
+            }
+        }
+        return false;
+    }
+
+    public void onEntityCollidedWithBlock(World world, int ox, int oy, int oz, Entity entity) {
+        while(world.getBlock(ox - 1, oy, oz)==Waypoints.blockWaypoint) ox--;
+        while(world.getBlock(ox, oy, oz - 1)==Waypoints.blockWaypoint) oz--;
+        Random rand = new Random();
+        if(!world.isRemote) {
+            if(BlockWaypoint.isEntityOnWaypoint(world, ox, oy, oz, entity) && isPowered(world, ox,oy,oz)){
+                Waypoint w = Waypoint.getWaypoint(Waypoint.getWaypoint(ox, oy, oz, entity.dimension).linked_id - 1);
+                if(w==null) return;
+                if(isPowered(world, w.x, w.y, w.z)) return;
+                entity.mountEntity((Entity) null);
+                ByteBuf buffer1 = Unpooled.buffer();
+                buffer1.writeInt(3);
+                buffer1.writeDouble(entity.posX);
+                buffer1.writeDouble(entity.posY);
+                buffer1.writeDouble(entity.posZ);
+                FMLProxyPacket packet1 = new FMLProxyPacket(buffer1.copy(), "Waypoints");
+
+                if (entity.dimension != w.dimension) entity.travelToDimension(w.dimension);
+                int size = BlockWaypoint.checkSize(entity.worldObj, w.x, w.y, w.z);
+                if (entity instanceof EntityPlayer) {
+                    if(!(entity.motionX == 0 && entity.motionY == 0 && entity.motionZ == 0)) return;
+                    ((EntityPlayer) entity).setLocationAndAngles(w.x + size / 2.0, w.y + 0.5, w.z + size / 2.0, entity.rotationYaw, 0);
+                    ((EntityPlayer) entity).setPositionAndUpdate(w.x + size / 2.0, w.y + 0.5, w.z + size / 2.0);
+                } else {
+                    entity.setLocationAndAngles(w.x + size / 2.0, w.y + 0.5, w.z + size / 2.0, rand.nextFloat() % 360, 0);
+                }
+                ByteBuf buffer = Unpooled.buffer();
+                buffer.writeInt(3);
+                buffer.writeDouble(entity.posX);
+                buffer.writeDouble(entity.posY);
+                buffer.writeDouble(entity.posZ);
+                FMLProxyPacket packet = new FMLProxyPacket(buffer.copy(), "Waypoints");
+                Waypoints.Channel.sendToAllAround(packet1, new NetworkRegistry.TargetPoint(entity.dimension, entity.posX, entity.posY, entity.posZ, 25));
+                Waypoints.Channel.sendToAllAround(packet, new NetworkRegistry.TargetPoint(entity.dimension, entity.posX, entity.posY, entity.posZ, 25));
+
+            }
+        }
+    }
 
 }
