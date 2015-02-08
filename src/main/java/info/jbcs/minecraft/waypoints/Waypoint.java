@@ -22,6 +22,7 @@ public class Waypoint {
 	public int x,y,z,dimension;
 	String name;
     int linked_id;
+    boolean powered;
 	
 	static HashMap<String,Waypoint> waypointsLocationMap=new HashMap<String,Waypoint>();
 	static Waypoint waypoints[]=new Waypoint[0x400];
@@ -52,6 +53,7 @@ public class Waypoint {
 		stream.writeInt(dimension);
         ByteBufUtils.writeUTF8String(stream, name);
         stream.writeInt(linked_id);
+        stream.writeBoolean(powered);
 	}
 	
 	void read(ByteBuf stream) throws IOException{
@@ -64,6 +66,7 @@ public class Waypoint {
 		dimension=stream.readInt();
         name=ByteBufUtils.readUTF8String(stream);
         linked_id=stream.readInt();
+        powered=stream.readBoolean();
 	}
 
 	void write(NBTTagCompound tag){
@@ -74,6 +77,7 @@ public class Waypoint {
 		tag.setInteger("dim",dimension);
 		tag.setString("name", name);
         tag.setInteger("linked_id", linked_id);
+        tag.setBoolean("powered", powered);
 	}
 
 	void read(NBTTagCompound tag){
@@ -82,6 +86,7 @@ public class Waypoint {
 		initialize(tag.getInteger("id"),tag.getInteger("x"),tag.getInteger("y"),tag.getInteger("z"),tag.getInteger("dim"));
 		name=tag.getString("name");
         linked_id=tag.getInteger("linked_id");
+        powered=tag.getBoolean("powered");
 	}
 
 	public static String locKey(int x,int y,int z,int dimension){

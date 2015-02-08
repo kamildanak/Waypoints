@@ -15,6 +15,7 @@ import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
@@ -22,6 +23,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldProvider;
 import org.lwjgl.Sys;
 
 public class BlockWaypoint extends Block {
@@ -284,20 +286,22 @@ public class BlockWaypoint extends Block {
     @Override
     public void randomDisplayTick(World world, int ox, int oy, int oz, Random rand) {
         BlockWaypoint blockWaypoint = (BlockWaypoint) world.getBlock(ox,oy,oz);
-        if(blockWaypoint.isPowered(world, ox, oy, oz) && blockWaypoint.isValidWaypoint(world, ox, oy, oz)) {
-            float fx = (float)ox + 0.5F;
-            float fy = (float)oy + 1.0F + rand.nextFloat() * 6.0F / 16.0F;
-            float fz = (float)oz + 0.5F;
-            while(world.getBlock(ox - 1, oy, oz)==Waypoints.blockWaypoint) ox--;
-            while(world.getBlock(ox, oy, oz - 1)==Waypoints.blockWaypoint) oz--;
+        if(!blockWaypoint.isValidWaypoint(world, ox, oy, oz)) return;
 
-            Waypoint w = Waypoint.getWaypoint(Waypoint.getWaypoint(ox, oy, oz, world.provider.dimensionId).linked_id - 1);
+        float fx = (float)ox + 0.5F;
+        float fy = (float)oy + 1.0F + rand.nextFloat() * 6.0F / 16.0F;
+        float fz = (float)oz + 0.5F;
+        while(world.getBlock(ox - 1, oy, oz)==Waypoints.blockWaypoint) ox--;
+        while(world.getBlock(ox, oy, oz - 1)==Waypoints.blockWaypoint) oz--;
+        Waypoint src = Waypoint.getWaypoint(ox, oy, oz, world.provider.dimensionId);
+        if(src.powered) {
+            Waypoint w = Waypoint.getWaypoint(src.linked_id - 1);
             if(w==null) return;
-            if(isPowered(world, w.x, w.y, w.z)) return;
             world.spawnParticle("portal", (double) fx + rand.nextFloat()%1-0.5, (double) fy, (double) fz + rand.nextFloat()%1-0.5, 0.0D, 0.0D, 0.0D);
             world.spawnParticle("portal", (double) fx, (double) fy, (double) fz, 0.0D, 0.0D, 0.0D);
         }
     }
+
 
     public boolean isPowered(World world, int ox, int oy, int oz){
         while(world.getBlock(ox - 1, oy, oz)==Waypoints.blockWaypoint) ox--;
@@ -317,11 +321,10 @@ public class BlockWaypoint extends Block {
         while(world.getBlock(ox, oy, oz - 1)==Waypoints.blockWaypoint) oz--;
         Random rand = new Random();
         if(!world.isRemote) {
-            if(BlockWaypoint.isEntityOnWaypoint(world, ox, oy, oz, entity) && isPowered(world, ox,oy,oz)){
-                Waypoint w = Waypoint.getWaypoint(Waypoint.getWaypoint(ox, oy, oz, entity.dimension).linked_id - 1);
+            Waypoint src = Waypoint.getWaypoint(ox, oy, oz, entity.dimension);
+            if(BlockWaypoint.isEntityOnWaypoint(world, ox, oy, oz, entity)){
+                Waypoint w = Waypoint.getWaypoint(src.linked_id - 1);
                 if(w==null) return;
-                if(isPowered(world, w.x, w.y, w.z)) return;
-                entity.mountEntity((Entity) null);
                 ByteBuf buffer1 = Unpooled.buffer();
                 buffer1.writeInt(3);
                 buffer1.writeDouble(entity.posX);
@@ -329,26 +332,45 @@ public class BlockWaypoint extends Block {
                 buffer1.writeDouble(entity.posZ);
                 FMLProxyPacket packet1 = new FMLProxyPacket(buffer1.copy(), "Waypoints");
 
-                if (entity.dimension != w.dimension) entity.travelToDimension(w.dimension);
                 int size = BlockWaypoint.checkSize(entity.worldObj, w.x, w.y, w.z);
-                if (entity instanceof EntityPlayer) {
-                    if(!(entity.motionX == 0 && entity.motionY == 0 && entity.motionZ == 0)) return;
-                    ((EntityPlayer) entity).setLocationAndAngles(w.x + size / 2.0, w.y + 0.5, w.z + size / 2.0, entity.rotationYaw, 0);
-                    ((EntityPlayer) entity).setPositionAndUpdate(w.x + size / 2.0, w.y + 0.5, w.z + size / 2.0);
-                } else {
-                    entity.setLocationAndAngles(w.x + size / 2.0, w.y + 0.5, w.z + size / 2.0, rand.nextFloat() % 360, 0);
+                boolean teleported = false;
+                if(entity instanceof EntityPlayer || entity instanceof EntityLiving){
+                    if(entity.timeUntilPortal>0 && entity.timeUntilPortal<=entity.getPortalCooldown()){
+                        entity.timeUntilPortal = entity.getPortalCooldown();
+                    }else if(entity.timeUntilPortal>entity.getPortalCooldown() && entity.timeUntilPortal<2*entity.getPortalCooldown()){
+                        MinecraftServer minecraftServer = MinecraftServer.getServer();
+                        entity.timeUntilPortal=entity.getPortalCooldown();
+                        teleported=new WaypointTeleporter(minecraftServer.worldServerForDimension(world.provider.dimensionId)).teleport(entity, world, w);
+                    }else if(src.powered && entity instanceof EntityPlayer && entity.timeUntilPortal==0){
+                        entity.timeUntilPortal=2*entity.getPortalCooldown()+20;
+                    }else if(src.powered && entity.timeUntilPortal==0){
+                        entity.timeUntilPortal=2*entity.getPortalCooldown();
+                    }
                 }
-                ByteBuf buffer = Unpooled.buffer();
-                buffer.writeInt(3);
-                buffer.writeDouble(entity.posX);
-                buffer.writeDouble(entity.posY);
-                buffer.writeDouble(entity.posZ);
-                FMLProxyPacket packet = new FMLProxyPacket(buffer.copy(), "Waypoints");
-                Waypoints.Channel.sendToAllAround(packet1, new NetworkRegistry.TargetPoint(entity.dimension, entity.posX, entity.posY, entity.posZ, 25));
-                Waypoints.Channel.sendToAllAround(packet, new NetworkRegistry.TargetPoint(entity.dimension, entity.posX, entity.posY, entity.posZ, 25));
-
+                if(teleported){
+                    ByteBuf buffer = Unpooled.buffer();
+                    buffer.writeInt(3);
+                    buffer.writeDouble(w.x+size/2.0);
+                    buffer.writeDouble(w.y+0.5);
+                    buffer.writeDouble(w.z+size/2.0);
+                    FMLProxyPacket packet = new FMLProxyPacket(buffer.copy(), "Waypoints");
+                    Waypoints.Channel.sendToAllAround(packet1, new NetworkRegistry.TargetPoint(src.dimension, entity.posX, entity.posY, entity.posZ, 25));
+                    Waypoints.Channel.sendToAllAround(packet, new NetworkRegistry.TargetPoint(w.dimension, w.x+size/2.0, w.y, w.z+size/2.0, 25));
+                }
             }
         }
     }
-
+    public void onNeighborBlockChange(World world, int ox, int oy, int oz, Block block) {
+        while(world.getBlock(ox - 1, oy, oz)==Waypoints.blockWaypoint) ox--;
+        while(world.getBlock(ox, oy, oz - 1)==Waypoints.blockWaypoint) oz--;
+        if(isPowered(world, ox,oy,oz)){
+            Waypoint waypoint = Waypoint.getWaypoint(ox, oy, oz, world.provider.dimensionId);
+            waypoint.powered=true;
+            waypoint.changed=true;
+        }else{
+            Waypoint waypoint = Waypoint.getWaypoint(ox, oy, oz, world.provider.dimensionId);
+            waypoint.powered=false;
+            waypoint.changed=true;
+        }
+    }
 }
