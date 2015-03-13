@@ -3,6 +3,7 @@ package info.jbcs.minecraft.waypoints;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import cpw.mods.fml.common.network.ByteBufUtils;
 import cpw.mods.fml.common.network.internal.FMLProxyPacket;
@@ -11,6 +12,8 @@ import io.netty.buffer.Unpooled;
 import net.minecraft.client.Minecraft;
 
 import org.lwjgl.opengl.GL11;
+
+import static java.lang.Math.min;
 
 public class GuiWaypoints extends GuiScreenPlus {
 	ArrayList<Waypoint> waypoints;
@@ -32,7 +35,8 @@ public class GuiWaypoints extends GuiScreenPlus {
 		addChild(scroller=new GuilScrolledBox(0, 22, 227, 199-12-22));
 		
 		int buttonHeight=Waypoints.compactView?14:36;
-		
+
+        int i=0;
 		for(final Waypoint w: waypoints){
 			GuiWaypointButton button;
 			
@@ -56,11 +60,12 @@ public class GuiWaypoints extends GuiScreenPlus {
 			if(w.id==currentWaypointId){
 				button.selected=true;
 				selectedButton=button;
-				
-				scroller.offset=50-buttonHeight*waypointButtons.size();
+
+                scroller.offset = min((50-buttonHeight*waypointButtons.size()), ((buttonHeight-14)*i)/2);
 			}
 			
 			waypointButtons.add(button);
+            i++;
 		}
 		
 		
