@@ -1,25 +1,16 @@
-package info.jbcs.minecraft.waypoints;
+package info.jbcs.minecraft.waypoints.gui;
 
 import cpw.mods.fml.common.network.ByteBufUtils;
 import cpw.mods.fml.common.network.internal.FMLProxyPacket;
-
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-
+import info.jbcs.minecraft.waypoints.Waypoint;
+import info.jbcs.minecraft.waypoints.Waypoints;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import net.minecraft.block.BlockSand;
-import net.minecraft.block.BlockWood;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
-import org.lwjgl.Sys;
-import scala.Int;
+
+import java.io.IOException;
+import java.util.ArrayList;
 
 public class GuiEditWaypoint extends GuiScreenPlus {
     GuiEdit nameEdit;
@@ -50,7 +41,9 @@ public class GuiEditWaypoint extends GuiScreenPlus {
 
         addChild(select_button = new GuiExButton(9, 54, 100, 17, "") {
             @Override
-            public void onClick(){aaa();};
+            public void onClick() {
+                aaa();
+            }
         });
         refreshLinked();
 
@@ -77,22 +70,25 @@ public class GuiEditWaypoint extends GuiScreenPlus {
             }
         });
     }
-    public void aaa(){
+
+    public void aaa() {
         Minecraft.getMinecraft().displayGuiScreen(new GuiPickWaypoint(waypointId, waypoints, this));
     }
-    public void setLinkedWaypoint(Integer linked_id){
+
+    public void setLinkedWaypoint(Integer linked_id) {
         linkedId = linked_id;
         refreshLinked();
     }
-    public void refreshLinked(){
-        if(Waypoint.getWaypoint(linkedId-1)!=null) {
-            String name = Waypoint.getWaypoint(linkedId-1).name;
+
+    public void refreshLinked() {
+        if (Waypoint.getWaypoint(linkedId - 1) != null) {
+            String name = Waypoint.getWaypoint(linkedId - 1).name;
             if (name.length() > 16)
                 name = name.substring(0, 13) + "...";
             select_button.caption = name;
 
-        }else{
-            linkedId=0;
+        } else {
+            linkedId = 0;
             select_button.caption = "None selected";
         }
     }
