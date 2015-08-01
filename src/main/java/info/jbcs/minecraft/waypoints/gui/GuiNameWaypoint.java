@@ -1,15 +1,13 @@
 package info.jbcs.minecraft.waypoints.gui;
 
-import cpw.mods.fml.common.network.ByteBufUtils;
-import cpw.mods.fml.common.network.internal.FMLProxyPacket;
+import info.jbcs.minecraft.waypoints.Waypoint;
 import info.jbcs.minecraft.waypoints.Waypoints;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import info.jbcs.minecraft.waypoints.network.MsgName;
 
 public class GuiNameWaypoint extends GuiScreenPlus {
     GuiEdit nameEdit;
 
-    public GuiNameWaypoint(final int currentWaypointId, String suggestedName) {
+    public GuiNameWaypoint(final Waypoint waypoint, String suggestedName) {
         super(117, 73, "waypoints:textures/gui-name-waypoint.png");
 
         addChild(new GuiLabel(9, 9, "Name waypoint:"));
@@ -19,14 +17,8 @@ public class GuiNameWaypoint extends GuiScreenPlus {
         addChild(new GuiExButton(7, 45, 49, 20, "OK") {
             @Override
             public void onClick() {
-                ByteBuf buffer = Unpooled.buffer();
-                buffer.writeInt(currentWaypointId);
-                buffer.writeInt(2);
-                buffer.writeInt(currentWaypointId);
-                ByteBufUtils.writeUTF8String(buffer, nameEdit.getText());
-                FMLProxyPacket packet = new FMLProxyPacket(buffer.copy(), "Waypoints");
-
-                Waypoints.Channel.sendToServer(packet);
+                MsgName msg = new MsgName(waypoint, nameEdit.getText());
+                Waypoints.instance.messagePipeline.sendToServer(msg);
                 close();
             }
         });

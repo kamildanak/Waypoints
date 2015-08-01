@@ -1,10 +1,9 @@
 package info.jbcs.minecraft.waypoints.gui;
 
-import cpw.mods.fml.common.network.internal.FMLProxyPacket;
 import info.jbcs.minecraft.waypoints.Waypoint;
 import info.jbcs.minecraft.waypoints.Waypoints;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import info.jbcs.minecraft.waypoints.network.MsgDelete;
+import info.jbcs.minecraft.waypoints.network.MsgTeleport;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL11;
 
@@ -41,9 +40,12 @@ public class GuiWaypoints extends GuiScreenPlus {
                 @Override
                 public void onClick() {
                     if (selectedButton == this) {
-                        if (send(0))
-                            closeWaypoints();
-
+                        if (selectedButton == null) return;
+                        final Waypoint wp = selectedButton.waypoint;
+                        if (wp == null) return;
+                        MsgTeleport msg = new MsgTeleport(Waypoint.getWaypoint(currentWaypointId), Waypoint.getWaypoint(wp.id));
+                        Waypoints.instance.messagePipeline.sendToServer(msg);
+                        closeWaypoints();
                         return;
                     }
 
@@ -69,15 +71,22 @@ public class GuiWaypoints extends GuiScreenPlus {
         addChild(gotoButton = new GuiExButton(12, 199, 64, 20, "Go to") {
             @Override
             public void onClick() {
-                if (send(0))
-                    closeWaypoints();
+                if (selectedButton == null) return;
+                final Waypoint wp = selectedButton.waypoint;
+                if (wp == null) return;
+                MsgTeleport msg = new MsgTeleport(Waypoint.getWaypoint(currentWaypointId), Waypoint.getWaypoint(wp.id));
+                Waypoints.instance.messagePipeline.sendToServer(msg);
+                closeWaypoints();
             }
         });
 
         addChild(deleteButton = new GuiExButton(82, 199, 64, 20, "Delete") {
             @Override
             public void onClick() {
-                send(1);
+                final Waypoint wp = selectedButton.waypoint;
+                if (wp == null) return;
+                MsgDelete msg = new MsgDelete(Waypoint.getWaypoint(wp.id));
+                Waypoints.instance.messagePipeline.sendToServer(msg);
                 selectedButton.waypoint = null;
             }
         });
@@ -88,21 +97,6 @@ public class GuiWaypoints extends GuiScreenPlus {
                 closeWaypoints();
             }
         });
-    }
-
-    boolean send(final int action) {
-        if (selectedButton == null) return false;
-        final Waypoint wp = selectedButton.waypoint;
-        if (wp == null) return false;
-
-        ByteBuf buffer = Unpooled.buffer();
-        buffer.writeInt(currentWaypointId);
-        buffer.writeInt(action);
-        buffer.writeInt(wp.id);
-        FMLProxyPacket packet = new FMLProxyPacket(buffer.copy(), "Waypoints");
-        Waypoints.Channel.sendToServer(packet);
-
-        return true;
     }
 
     @Override

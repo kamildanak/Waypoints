@@ -1,12 +1,14 @@
 package info.jbcs.minecraft.waypoints.block;
 
-import cpw.mods.fml.common.network.ByteBufUtils;
 import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.network.internal.FMLProxyPacket;
 import info.jbcs.minecraft.waypoints.Waypoint;
 import info.jbcs.minecraft.waypoints.WaypointPlayerInfo;
 import info.jbcs.minecraft.waypoints.WaypointTeleporter;
 import info.jbcs.minecraft.waypoints.Waypoints;
+import info.jbcs.minecraft.waypoints.network.MsgEditWaypoint;
+import info.jbcs.minecraft.waypoints.network.MsgNameWaypoint;
+import info.jbcs.minecraft.waypoints.network.MsgRedDust;
 import info.jbcs.minecraft.waypoints.network.Packets;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -25,6 +27,7 @@ import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Random;
 
 public class BlockWaypoint extends Block {
@@ -100,42 +103,22 @@ public class BlockWaypoint extends Block {
 
         if (!isEntityOnWaypoint(world, x, y, z, player)) return true;
         if (src.name.isEmpty()) {
-            int type = 2;
-            ByteBuf buffer = Unpooled.buffer();
-            buffer.writeInt(type);
-            buffer.writeInt(src.id);
-            ByteBufUtils.writeUTF8String(buffer, "Waypoint #" + src.id);
-            FMLProxyPacket packet = new FMLProxyPacket(buffer.copy(), "Waypoints");
+            MsgNameWaypoint msg = new MsgNameWaypoint(src, "Waypoint #" + src.id);
+            Waypoints.instance.messagePipeline.sendTo(msg, (EntityPlayerMP) player);
 
-            Waypoints.Channel.sendTo(packet, (EntityPlayerMP) player);
         } else if (player.isSneaking() && (Waypoints.allowActivation || isOP)) {
-            int type = 4;
-
-            ByteBuf buffer = Unpooled.buffer();
-            buffer.writeInt(type);
-            buffer.writeInt(src.id);
-            ByteBufUtils.writeUTF8String(buffer, src.name);
-            buffer.writeInt(src.linked_id);
             //Add waypoints
+            ArrayList<Waypoint> waypoints = new ArrayList<Waypoint>();
             final WaypointPlayerInfo info = WaypointPlayerInfo.get(player.getDisplayName());
-            int count = 0;
-            for (Waypoint w : Waypoint.existingWaypoints)
-                if (info.discoveredWaypoints.containsKey(w.id))
-                    count++;
-
-            buffer.writeInt(count);
+            if (info == null) return false;
+            info.addWaypoint(src.id);
 
             for (Waypoint w : Waypoint.existingWaypoints)
                 if (info.discoveredWaypoints.containsKey(w.id))
-                    try {
-                        w.write(buffer);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    waypoints.add(w);
 
-            FMLProxyPacket packet = new FMLProxyPacket(buffer.copy(), "Waypoints");
-
-            Waypoints.Channel.sendTo(packet, (EntityPlayerMP) player);
+            MsgEditWaypoint msg = new MsgEditWaypoint(src.id, src.name, src.linked_id, waypoints);
+            Waypoints.instance.messagePipeline.sendTo(msg, (EntityPlayerMP) player);
         } else {
             try {
                 Packets.sendWaypointsToPlayer((EntityPlayerMP) player, src.id);
@@ -346,14 +329,10 @@ public class BlockWaypoint extends Block {
                     }
                 }
                 if (teleported) {
-                    ByteBuf buffer = Unpooled.buffer();
-                    buffer.writeInt(3);
-                    buffer.writeDouble(w.x + size / 2.0);
-                    buffer.writeDouble(w.y + 0.5);
-                    buffer.writeDouble(w.z + size / 2.0);
-                    FMLProxyPacket packet = new FMLProxyPacket(buffer.copy(), "Waypoints");
-                    Waypoints.Channel.sendToAllAround(packet1, new NetworkRegistry.TargetPoint(src.dimension, entity.posX, entity.posY, entity.posZ, 25));
-                    Waypoints.Channel.sendToAllAround(packet, new NetworkRegistry.TargetPoint(w.dimension, w.x + size / 2.0, w.y, w.z + size / 2.0, 25));
+                    MsgRedDust msg1 = new MsgRedDust(src.dimension, entity.posX, entity.posY, entity.posZ);
+                    MsgRedDust msg2 = new MsgRedDust(w.dimension, w.x + size / 2.0, w.y + 0.5, w.z + size / 2.0);
+                    Waypoints.instance.messagePipeline.sendToAllAround(msg1, new NetworkRegistry.TargetPoint(src.dimension, entity.posX, entity.posY, entity.posZ, 25));
+                    Waypoints.instance.messagePipeline.sendToAllAround(msg2, new NetworkRegistry.TargetPoint(w.dimension, w.x + size / 2.0, w.y, w.z + size / 2.0, 25));
                 }
             }
         }

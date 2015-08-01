@@ -1,15 +1,10 @@
 package info.jbcs.minecraft.waypoints.gui;
 
-import cpw.mods.fml.common.network.ByteBufUtils;
-import cpw.mods.fml.common.network.internal.FMLProxyPacket;
 import info.jbcs.minecraft.waypoints.Waypoint;
 import info.jbcs.minecraft.waypoints.Waypoints;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import info.jbcs.minecraft.waypoints.network.MsgEdit;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.EntityPlayer;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 public class GuiEditWaypoint extends GuiScreenPlus {
@@ -19,19 +14,10 @@ public class GuiEditWaypoint extends GuiScreenPlus {
     int waypointId;
     int linkedId;
 
-    public GuiEditWaypoint(final int currentWaypointId, String suggestedName, Integer linked_id, final EntityPlayer player, final ByteBuf bbis) {
+    public GuiEditWaypoint(final int currentWaypointId, String suggestedName, final Integer linked_id, ArrayList<Waypoint> waypoints) {
         super(117, 106, "waypoints:textures/gui-edit-waypoint.png");
+        this.waypoints = waypoints;
 
-        final int count = bbis.readInt();
-        for (int i = 0; i < count; i++) {
-            Waypoint wp = null;
-            try {
-                wp = new Waypoint(bbis);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            waypoints.add(wp);
-        }
         waypointId = currentWaypointId;
         linkedId = linked_id;
         addChild(new GuiLabel(9, 9, "Waypoint name:"));
@@ -50,15 +36,8 @@ public class GuiEditWaypoint extends GuiScreenPlus {
         addChild(new GuiExButton(7, 77, 49, 20, "OK") {
             @Override
             public void onClick() {
-                ByteBuf buffer = Unpooled.buffer();
-                buffer.writeInt(currentWaypointId);
-                buffer.writeInt(3);
-                buffer.writeInt(currentWaypointId);
-                ByteBufUtils.writeUTF8String(buffer, nameEdit.getText());
-                buffer.writeInt(linkedId);
-                FMLProxyPacket packet = new FMLProxyPacket(buffer.copy(), "Waypoints");
-
-                Waypoints.Channel.sendToServer(packet);
+                MsgEdit msg = new MsgEdit(Waypoint.getWaypoint(currentWaypointId), nameEdit.getText(), linkedId);
+                Waypoints.instance.messagePipeline.sendToServer(msg);
                 close();
             }
         });

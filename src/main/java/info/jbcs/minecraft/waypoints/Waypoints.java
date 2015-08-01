@@ -4,12 +4,10 @@ import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.*;
-import cpw.mods.fml.common.network.FMLEventChannel;
-import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.registry.GameRegistry;
 import info.jbcs.minecraft.waypoints.block.BlockWaypoint;
 import info.jbcs.minecraft.waypoints.item.ItemWaypoint;
-import info.jbcs.minecraft.waypoints.network.ServerPacketHandler;
+import info.jbcs.minecraft.waypoints.network.MessagePipeline;
 import info.jbcs.minecraft.waypoints.proxy.Proxy;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.ItemStack;
@@ -31,17 +29,22 @@ public class Waypoints {
     public static String recipe;
     public static boolean craftable;
     public static boolean allowActivation;
-    public static FMLEventChannel Channel;
+    public MessagePipeline messagePipeline;
 
     public static BlockWaypoint blockWaypoint;
 
-
+    @Mod.Instance("Waypoints")
     public static Waypoints instance;
+
     public static CreativeTabs tabWaypoints;
     private File loadedWorldDir;
 
     @SidedProxy(clientSide = "info.jbcs.minecraft.waypoints.proxy.ProxyClient", serverSide = "info.jbcs.minecraft.waypoints.proxy.Proxy")
     public static Proxy proxy;
+
+    public Waypoints() {
+        messagePipeline = new MessagePipeline();
+    }
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
@@ -53,8 +56,6 @@ public class Waypoints {
 
     @EventHandler
     public void init(FMLInitializationEvent event) {
-        Channel = NetworkRegistry.INSTANCE.newEventDrivenChannel("Waypoints");
-        Waypoints.Channel.register(new ServerPacketHandler());
         proxy.init();
 
         tabWaypoints = CreativeTabs.tabDecorations;
@@ -69,6 +70,7 @@ public class Waypoints {
         allowActivation = config.get("general", "can_no_ops_activate", true, "If set to false only ops can enable Waypoins").getBoolean();
         MinecraftForge.EVENT_BUS.register(this);
         config.save();
+        proxy.registerPackets(messagePipeline);
     }
 
     @EventHandler
