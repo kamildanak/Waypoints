@@ -31,6 +31,8 @@ public class Waypoints {
     public static boolean allowActivation;
     public MessagePipeline messagePipeline;
 
+    public static int maxSize = 3;
+
     public static BlockWaypoint blockWaypoint;
 
     @Mod.Instance("Waypoints")
