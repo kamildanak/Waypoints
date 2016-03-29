@@ -1,9 +1,9 @@
 package info.jbcs.minecraft.waypoints;
 
-import cpw.mods.fml.common.network.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraftforge.fml.common.network.ByteBufUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,6 +56,10 @@ public class WaypointPlayerInfo {
     }
 
     private void read(File file) throws IOException {
+        changed = false;
+        objects.clear();
+        discoveredWaypoints.clear();
+
         byte[] bytes = Files.readAllBytes(file.toPath());
         ByteBuf buffer = Unpooled.buffer();
         buffer.writeBytes(bytes);

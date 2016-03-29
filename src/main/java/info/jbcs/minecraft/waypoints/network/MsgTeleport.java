@@ -1,17 +1,24 @@
 package info.jbcs.minecraft.waypoints.network;
 
-import cpw.mods.fml.common.network.NetworkRegistry;
-import cpw.mods.fml.common.network.simpleimpl.IMessage;
-import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
-import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import info.jbcs.minecraft.waypoints.Waypoint;
+import info.jbcs.minecraft.waypoints.WaypointPlayerInfo;
 import info.jbcs.minecraft.waypoints.Waypoints;
 import info.jbcs.minecraft.waypoints.block.BlockWaypoint;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.network.PacketBuffer;
+import net.minecraft.util.BlockPos;
+import net.minecraftforge.fml.common.network.NetworkRegistry;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
+import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import net.minecraftforge.fml.relauncher.Side;
 
-public class MsgTeleport extends Message {
+import java.io.IOException;
+
+public class MsgTeleport extends AbstractMessage.AbstractServerMessage<MsgTeleport> {
     private static Waypoint src, dest;
 
     public MsgTeleport() {
@@ -23,39 +30,37 @@ public class MsgTeleport extends Message {
     }
 
     @Override
-    public void fromBytes(ByteBuf buf) {
-        src = Waypoint.getWaypoint(buf.readInt());
-        dest = Waypoint.getWaypoint(buf.readInt());
+    protected void read(PacketBuffer buffer) throws IOException {
+        src = Waypoint.getWaypoint(buffer.readInt());
+        dest = Waypoint.getWaypoint(buffer.readInt());
+
     }
 
     @Override
-    public void toBytes(ByteBuf buf) {
-        buf.writeInt(src.id);
-        buf.writeInt(dest.id);
+    protected void write(PacketBuffer buffer) throws IOException {
+        buffer.writeInt(src.id);
+        buffer.writeInt(dest.id);
+
     }
 
-    public static class Handler implements IMessageHandler<MsgTeleport, IMessage> {
+    @Override
+    public void process(EntityPlayer player, Side side) {
+        if (src == null || dest == null) return ;
 
-        @Override
-        public IMessage onMessage(MsgTeleport message, MessageContext ctx) {
-            if (src == null || dest == null) return null;
+        if (!BlockWaypoint.isEntityOnWaypoint(player.worldObj, src.pos, player)) return;
+        player.mountEntity((Entity) null);
 
-            EntityPlayerMP player = ctx.getServerHandler().playerEntity;
-            if (!BlockWaypoint.isEntityOnWaypoint(player.worldObj, src.x, src.y, src.z, player)) return null;
-            player.mountEntity((Entity) null);
+        MsgRedDust msg1 = new MsgRedDust(player.dimension, player.posX, player.posY, player.posZ);
 
-            MsgRedDust msg1 = new MsgRedDust(player.dimension, player.posX, player.posY, player.posZ);
+        if (player.dimension != dest.dimension) player.travelToDimension(dest.dimension);
+        int size = BlockWaypoint.checkSize(player.worldObj, dest.pos, 0);
+        player.setLocationAndAngles(dest.pos.getX() + size / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size / 2.0, player.rotationYaw, 0);
+        player.setPositionAndUpdate(dest.pos.getX() + size / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size / 2.0);
 
-            if (player.dimension != dest.dimension) player.travelToDimension(dest.dimension);
-            int size = BlockWaypoint.checkSize(player.worldObj, dest.x, dest.y, dest.z);
-            player.setLocationAndAngles(dest.x + size / 2.0, dest.y + 0.5, dest.z + size / 2.0, player.rotationYaw, 0);
-            player.setPositionAndUpdate(dest.x + size / 2.0, dest.y + 0.5, dest.z + size / 2.0);
+        MsgRedDust msg2 = new MsgRedDust(dest.dimension, dest.pos.getX() + size / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size / 2.0);
+        PacketDispatcher.sendToAllAround(msg1, new NetworkRegistry.TargetPoint(msg1.getDimension(), msg1.getX(), msg1.getY(), msg1.getZ(), 25));
+        PacketDispatcher.sendToAllAround(msg2, new NetworkRegistry.TargetPoint(msg2.getDimension(), msg2.getX(), msg2.getY(), msg2.getZ(), 25));
 
-            MsgRedDust msg2 = new MsgRedDust(dest.dimension, dest.x + size / 2.0, dest.y + 0.5, dest.z + size / 2.0);
-            Waypoints.instance.messagePipeline.sendToAllAround(msg1, new NetworkRegistry.TargetPoint(msg1.getDimension(), msg1.getX(), msg1.getY(), msg1.getZ(), 25));
-            Waypoints.instance.messagePipeline.sendToAllAround(msg2, new NetworkRegistry.TargetPoint(msg2.getDimension(), msg2.getX(), msg2.getY(), msg2.getZ(), 25));
-
-            return null;
-        }
     }
+
 }

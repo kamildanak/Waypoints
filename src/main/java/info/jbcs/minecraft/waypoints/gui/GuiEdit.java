@@ -4,7 +4,7 @@ import net.minecraft.client.gui.GuiTextField;
 
 public class GuiEdit extends GuiElement {
     GuiTextField field;
-    String tempString = "";
+    String tempString="";
 
     public GuiEdit(int x, int y, int w, int h) {
         super(x, y, w, h);
@@ -12,7 +12,7 @@ public class GuiEdit extends GuiElement {
 
     @Override
     public void onAdded() {
-        field = new GuiTextField(gui.fontRenderer(), x, y, w, h);
+        field = new GuiTextField(0, gui.fontRenderer(), x, y, w, h);
         setText(tempString);
     }
 

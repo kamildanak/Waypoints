@@ -1,35 +1,46 @@
 package info.jbcs.minecraft.waypoints;
 
-import cpw.mods.fml.common.Mod;
-import cpw.mods.fml.common.Mod.EventHandler;
-import cpw.mods.fml.common.SidedProxy;
-import cpw.mods.fml.common.event.*;
-import cpw.mods.fml.common.registry.GameRegistry;
 import info.jbcs.minecraft.waypoints.block.BlockWaypoint;
+import info.jbcs.minecraft.waypoints.gui.GuiEditWaypoint;
+import info.jbcs.minecraft.waypoints.gui.GuiHandler;
+import info.jbcs.minecraft.waypoints.inventory.DummyContainer;
 import info.jbcs.minecraft.waypoints.item.ItemWaypoint;
-import info.jbcs.minecraft.waypoints.network.MessagePipeline;
 import info.jbcs.minecraft.waypoints.proxy.Proxy;
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
+import net.minecraft.init.Items;
+import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.CraftingManager;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.ISaveHandler;
 import net.minecraft.world.storage.SaveHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.Mod.EventHandler;
+import net.minecraftforge.fml.common.SidedProxy;
+import net.minecraftforge.fml.common.event.*;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 
 import java.io.File;
 import java.io.IOException;
 
-@Mod(modid = "Waypoints", name = "Waypoints", version = "1.1.1")
+import static net.minecraftforge.fml.common.registry.GameRegistry.addRecipe;
+
+@Mod(modid = Waypoints.MODID, name = Waypoints.MODNAME, version = Waypoints.VERSION)
 public class Waypoints {
+    public static final String MODID = "Waypoints";
+    public static final String MODNAME = "Waypoints";
+    public static final String VERSION = "1.8.9-1.1.1";
+
     static Configuration config;
     public static boolean compactView;
     public static String default_recipe = "3x2,minecraft:stone:1,minecraft:stone:1,minecraft:stone:1,minecraft:stone:1,minecraft:ender_pearl:1,minecraft:stone:1";
     public static String recipe;
     public static boolean craftable;
     public static boolean allowActivation;
-    public MessagePipeline messagePipeline;
+    public static GuiHandler guiEditWaypointh;
 
     public static int maxSize = 3;
 
@@ -40,13 +51,12 @@ public class Waypoints {
 
     public static CreativeTabs tabWaypoints;
     private File loadedWorldDir;
+    public static ItemBlock itemWaypoint;
 
     @SidedProxy(clientSide = "info.jbcs.minecraft.waypoints.proxy.ProxyClient", serverSide = "info.jbcs.minecraft.waypoints.proxy.Proxy")
     public static Proxy proxy;
 
-    public Waypoints() {
-        messagePipeline = new MessagePipeline();
-    }
+    public Waypoints() {}
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
@@ -58,21 +68,22 @@ public class Waypoints {
 
     @EventHandler
     public void init(FMLInitializationEvent event) {
-        proxy.init();
+
 
         tabWaypoints = CreativeTabs.tabDecorations;
 
         blockWaypoint = new BlockWaypoint();
         GameRegistry.registerBlock(blockWaypoint, ItemWaypoint.class, "waypoint");
-
+        proxy.init();
         compactView = config.get("general", "compact view", true, "Only show one line in Waypoint GUI, in order to fit more waypoints on the screen").getBoolean();
-        recipe = config.get("general", "recipe", default_recipe, "You can change crafting recipe here").getString();
+        //recipe = config.get("general", "recipe", default_recipe, "You can change crafting recipe here").getString();
         craftable = config.get("general", "craftable", true, "Set to false to completely disable crafting recipe").getBoolean();
-        if (craftable) addRecipe(new ItemStack(blockWaypoint, 1), recipe);
+        if (craftable) addRecipe(new ItemStack(blockWaypoint, 1), "SSS", "SES", 'S', Blocks.stone, 'E', Items.ender_pearl);
         allowActivation = config.get("general", "can_no_ops_activate", true, "If set to false only ops can enable Waypoins").getBoolean();
         MinecraftForge.EVENT_BUS.register(this);
         config.save();
-        proxy.registerPackets(messagePipeline);
+        proxy.registerPackets();
+        GuiHandler.register(this);
     }
 
     @EventHandler
@@ -96,10 +107,21 @@ public class Waypoints {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        loadedWorldDir = null;
+        WaypointPlayerInfo.location = null;
     }
 
     @EventHandler
     public void onLoadingWorld(FMLServerStartingEvent evt) {
+        Waypoint.existingWaypoints.clear();
+        Waypoint.waypointsLocationMap.clear();
+        Waypoint.nextId = 0;
+        Waypoint.waypoints = new Waypoint[0x400];
+        Waypoint.changed = false;
+
+        WaypointPlayerInfo.location = null;
+        WaypointPlayerInfo.objects.clear();
+
         File file = getWorldDir(evt.getServer().getEntityWorld());
         if (file == null) return;
         loadedWorldDir = file;
@@ -114,61 +136,6 @@ public class Waypoints {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public void addRecipe(ItemStack itemStack, String string) {
-        String[] string_array = string.split(",");
-        String[] itemstr;
-        ItemStack[] itemstack_array = new ItemStack[9];
-        int recipe_column = Integer.parseInt(string_array[0].split("x")[0]);
-        int recipe_row = Integer.parseInt(string_array[0].split("x")[1]);
-        String a = "", b = "", c = "";
-        for (int i = 0; i < recipe_row; i++) {
-            for (int j = 0; j < recipe_column; j++) {
-                itemstr = string_array[i * recipe_column + j + 1].split(":");
-                if (!(itemstr.length < 3)) {
-                    itemstack_array[i * recipe_column + j] = GameRegistry.findItemStack(itemstr[0], itemstr[1], Integer.parseInt(itemstr[2]));
-                    if (i == 0) a += Character.toString((char) (i * recipe_column + j + 65));
-                    if (i == 1) b += Character.toString((char) (i * recipe_column + j + 65));
-                    if (i == 2) c += Character.toString((char) (i * recipe_column + j + 65));
-                } else {
-                    itemstack_array[i * recipe_column + j] = null;
-                    if (i == 0) a += " ";
-                    if (i == 1) b += " ";
-                    if (i == 2) c += " ";
-                }
-            }
-        }
-        if (recipe_row == 1)
-            CraftingManager.getInstance().addRecipe(itemStack,
-                    a,
-                    (char) 65, itemstack_array[0],
-                    (char) 66, itemstack_array[1],
-                    (char) 67, itemstack_array[2]
-            );
-        if (recipe_row == 2)
-            CraftingManager.getInstance().addRecipe(itemStack,
-                    a, b,
-                    (char) 65, itemstack_array[0],
-                    (char) 66, itemstack_array[1],
-                    (char) 67, itemstack_array[2],
-                    (char) 68, itemstack_array[3],
-                    (char) 69, itemstack_array[4],
-                    (char) 70, itemstack_array[5]
-            );
-        if (recipe_row == 3)
-            CraftingManager.getInstance().addRecipe(itemStack,
-                    a, b, c,
-                    (char) 65, itemstack_array[0],
-                    (char) 66, itemstack_array[1],
-                    (char) 67, itemstack_array[2],
-                    (char) 68, itemstack_array[3],
-                    (char) 69, itemstack_array[4],
-                    (char) 70, itemstack_array[5],
-                    (char) 71, itemstack_array[6],
-                    (char) 72, itemstack_array[7],
-                    (char) 73, itemstack_array[8]
-            );
     }
 
 }

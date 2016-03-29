@@ -14,7 +14,7 @@ public class Packets {
     public static void sendWaypointsToPlayer(EntityPlayerMP player, final int srcWaypointId) throws IOException {
         ArrayList<Waypoint> waypoints = new ArrayList<Waypoint>();
 
-        final WaypointPlayerInfo info = WaypointPlayerInfo.get(player.getDisplayName());
+        WaypointPlayerInfo info = WaypointPlayerInfo.get(player.getUniqueID().toString());
         if (info == null) return;
 
         info.addWaypoint(srcWaypointId);
@@ -23,7 +23,7 @@ public class Packets {
             if (info.discoveredWaypoints.containsKey(w.id))
                 waypoints.add(w);
         MsgWaypointsList msg = new MsgWaypointsList(srcWaypointId, waypoints);
-        Waypoints.instance.messagePipeline.sendTo(msg, player);
+        PacketDispatcher.sendTo(msg, player);
     }
 
 }

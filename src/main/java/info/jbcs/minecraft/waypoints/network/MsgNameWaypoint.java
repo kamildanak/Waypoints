@@ -1,15 +1,22 @@
 package info.jbcs.minecraft.waypoints.network;
 
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.network.ByteBufUtils;
-import cpw.mods.fml.common.network.simpleimpl.IMessage;
-import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
-import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import info.jbcs.minecraft.waypoints.Waypoint;
+import info.jbcs.minecraft.waypoints.WaypointPlayerInfo;
 import info.jbcs.minecraft.waypoints.gui.GuiNameWaypoint;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.network.PacketBuffer;
+import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.network.ByteBufUtils;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
+import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import net.minecraftforge.fml.relauncher.Side;
 
-public class MsgNameWaypoint extends Message {
+import java.io.IOException;
+
+public class MsgNameWaypoint extends AbstractMessage.AbstractClientMessage<MsgNameWaypoint> {
     private Waypoint w;
     private String name;
 
@@ -22,23 +29,21 @@ public class MsgNameWaypoint extends Message {
     }
 
     @Override
-    public void fromBytes(ByteBuf buf) {
-        w = Waypoint.getWaypoint(buf.readInt());
-        name = ByteBufUtils.readUTF8String(buf);
+    protected void read(PacketBuffer buffer) throws IOException {
+        w = Waypoint.getWaypoint(buffer.readInt());
+        name = ByteBufUtils.readUTF8String(buffer);
+
     }
 
     @Override
-    public void toBytes(ByteBuf buf) {
-        buf.writeInt(w.id);
-        ByteBufUtils.writeUTF8String(buf, name);
+    protected void write(PacketBuffer buffer) throws IOException {
+        buffer.writeInt(w.id);
+        ByteBufUtils.writeUTF8String(buffer, name);
+
     }
 
-    public static class Handler implements IMessageHandler<MsgNameWaypoint, IMessage> {
-
-        @Override
-        public IMessage onMessage(MsgNameWaypoint message, MessageContext ctx) {
-            FMLCommonHandler.instance().showGuiScreen(new GuiNameWaypoint(message.w, message.name));
-            return null;
-        }
+    @Override
+    public void process(EntityPlayer player, Side side) {
+        FMLCommonHandler.instance().showGuiScreen(new GuiNameWaypoint(this.w, this.name));
     }
 }

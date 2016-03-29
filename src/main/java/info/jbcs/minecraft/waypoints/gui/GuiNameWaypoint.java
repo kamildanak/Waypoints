@@ -3,6 +3,7 @@ package info.jbcs.minecraft.waypoints.gui;
 import info.jbcs.minecraft.waypoints.Waypoint;
 import info.jbcs.minecraft.waypoints.Waypoints;
 import info.jbcs.minecraft.waypoints.network.MsgName;
+import info.jbcs.minecraft.waypoints.network.PacketDispatcher;
 
 public class GuiNameWaypoint extends GuiScreenPlus {
     GuiEdit nameEdit;
@@ -18,7 +19,7 @@ public class GuiNameWaypoint extends GuiScreenPlus {
             @Override
             public void onClick() {
                 MsgName msg = new MsgName(waypoint, nameEdit.getText());
-                Waypoints.instance.messagePipeline.sendToServer(msg);
+                PacketDispatcher.sendToServer(msg);
                 close();
             }
         });

@@ -2,3 +2,6 @@
 /out
 /eclipse
 /Waypoints.*
+.idea
+classes
+run

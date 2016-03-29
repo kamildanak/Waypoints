@@ -1,0 +1,12 @@
+{
+    "parent": "waypoints:block/sided_half_slab",
+    "textures": {
+        "bottom": "waypoints:blocks/waypoint-top-a",
+        "top": "waypoints:blocks/waypoint-top-a",
+        "side": "waypoints:blocks/waypoint-side-b",
+        "side-north": "waypoints:blocks/waypoint-side-a",
+        "side-south": "waypoints:blocks/waypoint-side-a",
+        "side-west": "waypoints:blocks/waypoint-side-b",
+        "side-east": "waypoints:blocks/waypoint-side-b"
+    }
+}

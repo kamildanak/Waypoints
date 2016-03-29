@@ -4,6 +4,7 @@ import info.jbcs.minecraft.waypoints.Waypoint;
 import info.jbcs.minecraft.waypoints.Waypoints;
 import info.jbcs.minecraft.waypoints.network.MsgDelete;
 import info.jbcs.minecraft.waypoints.network.MsgTeleport;
+import info.jbcs.minecraft.waypoints.network.PacketDispatcher;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL11;
 
@@ -35,8 +36,7 @@ public class GuiWaypoints extends GuiScreenPlus {
         int i = 0;
         for (final Waypoint w : waypoints) {
             GuiWaypointButton button;
-
-            scroller.addChild(button = new GuiWaypointButton(0, 4 + (buttonHeight + 4) * waypointButtons.size(), 220, buttonHeight, w) {
+            scroller.addChild(button = new GuiWaypointButton(0, 4 + (buttonHeight + 4) * waypointButtons.size(), 200, buttonHeight, w) {
                 @Override
                 public void onClick() {
                     if (selectedButton == this) {
@@ -44,7 +44,7 @@ public class GuiWaypoints extends GuiScreenPlus {
                         final Waypoint wp = selectedButton.waypoint;
                         if (wp == null) return;
                         MsgTeleport msg = new MsgTeleport(Waypoint.getWaypoint(currentWaypointId), Waypoint.getWaypoint(wp.id));
-                        Waypoints.instance.messagePipeline.sendToServer(msg);
+                        PacketDispatcher.sendToServer(msg);
                         closeWaypoints();
                         return;
                     }
@@ -75,7 +75,7 @@ public class GuiWaypoints extends GuiScreenPlus {
                 final Waypoint wp = selectedButton.waypoint;
                 if (wp == null) return;
                 MsgTeleport msg = new MsgTeleport(Waypoint.getWaypoint(currentWaypointId), Waypoint.getWaypoint(wp.id));
-                Waypoints.instance.messagePipeline.sendToServer(msg);
+                PacketDispatcher.sendToServer(msg);
                 closeWaypoints();
             }
         });
@@ -86,7 +86,7 @@ public class GuiWaypoints extends GuiScreenPlus {
                 final Waypoint wp = selectedButton.waypoint;
                 if (wp == null) return;
                 MsgDelete msg = new MsgDelete(Waypoint.getWaypoint(wp.id));
-                Waypoints.instance.messagePipeline.sendToServer(msg);
+                PacketDispatcher.sendToServer(msg);
                 selectedButton.waypoint = null;
             }
         });

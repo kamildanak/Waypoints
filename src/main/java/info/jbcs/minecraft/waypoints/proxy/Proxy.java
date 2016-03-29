@@ -1,7 +1,10 @@
 package info.jbcs.minecraft.waypoints.proxy;
 
-import cpw.mods.fml.relauncher.Side;
 import info.jbcs.minecraft.waypoints.network.*;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.IThreadListener;
+import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import net.minecraftforge.fml.relauncher.Side;
 
 public class Proxy {
     public void preInit() {
@@ -10,14 +13,29 @@ public class Proxy {
     public void init() {
     }
 
-    public void registerPackets(MessagePipeline pipeline) {
-        pipeline.registerMessage(MsgEditWaypoint.Handler.class, MsgEditWaypoint.class, 0, Side.CLIENT);
-        pipeline.registerMessage(MsgNameWaypoint.Handler.class, MsgNameWaypoint.class, 1, Side.CLIENT);
-        pipeline.registerMessage(MsgRedDust.Handler.class, MsgRedDust.class, 2, Side.CLIENT);
-        pipeline.registerMessage(MsgWaypointsList.Handler.class, MsgWaypointsList.class, 3, Side.CLIENT);
-        pipeline.registerMessage(MsgEdit.Handler.class, MsgEdit.class, 4, Side.SERVER);
-        pipeline.registerMessage(MsgName.Handler.class, MsgName.class, 5, Side.SERVER);
-        pipeline.registerMessage(MsgDelete.Handler.class, MsgDelete.class, 6, Side.SERVER);
-        pipeline.registerMessage(MsgTeleport.Handler.class, MsgTeleport.class, 7, Side.SERVER);
+    public void registerPackets() {
+        PacketDispatcher.registerMessage(MsgEditWaypoint.class);
+        PacketDispatcher.registerMessage(MsgNameWaypoint.class);
+        PacketDispatcher.registerMessage(MsgRedDust.class);
+        PacketDispatcher.registerMessage(MsgWaypointsList.class);
+        PacketDispatcher.registerMessage(MsgEdit.class); //Server
+        PacketDispatcher.registerMessage(MsgName.class);
+        PacketDispatcher.registerMessage(MsgDelete.class);
+        PacketDispatcher.registerMessage(MsgTeleport.class);
+    }
+
+    /**
+     * Returns a side-appropriate EntityPlayer for use during message handling
+     */
+    public EntityPlayer getPlayerEntity(MessageContext ctx) {
+        return ctx.getServerHandler().playerEntity;
+    }
+
+    /**
+     * Returns the current thread based on side during message handling,
+     * used for ensuring that the message is being handled by the main thread
+     */
+    public IThreadListener getThreadFromContext(MessageContext ctx) {
+        return ctx.getServerHandler().playerEntity.getServerForPlayer();
     }
 }

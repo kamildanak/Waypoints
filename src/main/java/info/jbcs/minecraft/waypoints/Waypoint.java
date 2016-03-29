@@ -1,9 +1,11 @@
 package info.jbcs.minecraft.waypoints;
 
-import cpw.mods.fml.common.network.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.BlockPos;
+import net.minecraftforge.fml.common.network.ByteBufUtils;
+import org.lwjgl.Sys;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,7 +15,8 @@ import java.util.HashMap;
 
 public class Waypoint {
     public int id;
-    public int x, y, z, dimension;
+    public BlockPos pos;
+    public int  dimension;
     public String name;
     public int linked_id;
     public boolean powered;
@@ -41,9 +44,9 @@ public class Waypoint {
 
     public void write(ByteBuf stream) throws IOException {
         stream.writeInt(id);
-        stream.writeInt(x);
-        stream.writeInt(y);
-        stream.writeInt(z);
+        stream.writeInt(pos.getX());
+        stream.writeInt(pos.getY());
+        stream.writeInt(pos.getZ());
         stream.writeInt(dimension);
         ByteBufUtils.writeUTF8String(stream, name);
         stream.writeInt(linked_id);
@@ -54,9 +57,7 @@ public class Waypoint {
         if (id != -1) return;
 
         id = stream.readInt();
-        x = stream.readInt();
-        y = stream.readInt();
-        z = stream.readInt();
+        pos = new BlockPos(stream.readInt(), stream.readInt(), stream.readInt());
         dimension = stream.readInt();
         name = ByteBufUtils.readUTF8String(stream);
         linked_id = stream.readInt();
@@ -65,9 +66,9 @@ public class Waypoint {
 
     void write(NBTTagCompound tag) {
         tag.setInteger("id", id);
-        tag.setInteger("x", x);
-        tag.setInteger("y", y);
-        tag.setInteger("z", z);
+        tag.setInteger("x", pos.getX());
+        tag.setInteger("y", pos.getY());
+        tag.setInteger("z", pos.getZ());
         tag.setInteger("dim", dimension);
         tag.setString("name", name);
         tag.setInteger("linked_id", linked_id);
@@ -77,14 +78,16 @@ public class Waypoint {
     void read(NBTTagCompound tag) {
         if (id != -1) return;
 
-        initialize(tag.getInteger("id"), tag.getInteger("x"), tag.getInteger("y"), tag.getInteger("z"), tag.getInteger("dim"));
+        initialize(tag.getInteger("id"), new BlockPos(tag.getInteger("x"), tag.getInteger("y"), tag.getInteger("z")),
+                tag.getInteger("dim"));
+
         name = tag.getString("name");
         linked_id = tag.getInteger("linked_id");
         powered = tag.getBoolean("powered");
     }
 
-    public static String locKey(int x, int y, int z, int dimension) {
-        return x + "|" + y + "|" + z + ":" + dimension;
+    public static String locKey(BlockPos pos, int dimension) {
+        return pos.getX() + "|" + pos.getY() + "|" + pos.getZ() + ":" + dimension;
     }
 
     public static Waypoint getWaypoint(int id) {
@@ -96,28 +99,26 @@ public class Waypoint {
 
     public static void removeWaypoint(Waypoint wp) {
         waypoints[wp.id] = null;
-        waypointsLocationMap.remove(locKey(wp.x, wp.y, wp.z, wp.dimension));
+        waypointsLocationMap.remove(locKey(wp.pos, wp.dimension));
         existingWaypoints.remove(wp);
 
         changed = true;
     }
 
-    void initialize(int id, int x, int y, int z, int dimension) {
-        String key = locKey(x, y, z, dimension);
+    void initialize(int id, BlockPos pos, int dimension) {
+        String key = locKey(pos, dimension);
 
         this.id = id;
         waypoints[id] = this;
-        this.x = x;
-        this.y = y;
-        this.z = z;
+        this.pos = pos;
         this.dimension = dimension;
         waypointsLocationMap.put(key, this);
         existingWaypoints.add(this);
         changed = true;
     }
 
-    public static Waypoint getWaypoint(int x, int y, int z, int dimension) {
-        String key = locKey(x, y, z, dimension);
+    public static Waypoint getWaypoint(BlockPos pos, int dimension) {
+        String key = locKey(pos, dimension);
         Waypoint wp = waypointsLocationMap.get(key);
 
         if (wp == null) {
@@ -128,7 +129,7 @@ public class Waypoint {
             }
 
             wp = new Waypoint();
-            wp.initialize(nextId, x, y, z, dimension);
+            wp.initialize(nextId, pos, dimension);
             wp.name = "";
         }
 
@@ -146,6 +147,7 @@ public class Waypoint {
             NBTTagCompound wtag = new NBTTagCompound();
             w.write(wtag);
             tag.setTag("" + (index++), wtag);
+            System.out.println(w.pos.getX() +"_"+ w.pos.getY() +"_"+ w.pos.getZ());
         }
 
         ByteBuf buffer = Unpooled.buffer();
@@ -159,10 +161,11 @@ public class Waypoint {
         existingWaypoints.clear();
         waypointsLocationMap.clear();
         nextId = 0;
-
+        waypoints = new Waypoint[0x400];
+        changed = false;
 
         byte[] bytes = Files.readAllBytes(file.toPath());
-        ;
+
         ByteBuf buffer = Unpooled.buffer();
         buffer.writeBytes(bytes);
         NBTTagCompound tag = ByteBufUtils.readTag(buffer);

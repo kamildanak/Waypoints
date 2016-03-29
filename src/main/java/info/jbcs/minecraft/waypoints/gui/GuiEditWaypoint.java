@@ -3,6 +3,7 @@ package info.jbcs.minecraft.waypoints.gui;
 import info.jbcs.minecraft.waypoints.Waypoint;
 import info.jbcs.minecraft.waypoints.Waypoints;
 import info.jbcs.minecraft.waypoints.network.MsgEdit;
+import info.jbcs.minecraft.waypoints.network.PacketDispatcher;
 import net.minecraft.client.Minecraft;
 
 import java.util.ArrayList;
@@ -13,6 +14,8 @@ public class GuiEditWaypoint extends GuiScreenPlus {
     ArrayList<Waypoint> waypoints = new ArrayList<Waypoint>();
     int waypointId;
     int linkedId;
+
+
 
     public GuiEditWaypoint(final int currentWaypointId, String suggestedName, final Integer linked_id, ArrayList<Waypoint> waypoints) {
         super(117, 106, "waypoints:textures/gui-edit-waypoint.png");
@@ -37,7 +40,7 @@ public class GuiEditWaypoint extends GuiScreenPlus {
             @Override
             public void onClick() {
                 MsgEdit msg = new MsgEdit(Waypoint.getWaypoint(currentWaypointId), nameEdit.getText(), linkedId);
-                Waypoints.instance.messagePipeline.sendToServer(msg);
+                PacketDispatcher.sendToServer(msg);
                 close();
             }
         });

@@ -1,14 +1,19 @@
 package info.jbcs.minecraft.waypoints.network;
 
-import cpw.mods.fml.common.network.simpleimpl.IMessage;
-import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
-import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import info.jbcs.minecraft.waypoints.Waypoint;
 import info.jbcs.minecraft.waypoints.WaypointPlayerInfo;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.network.PacketBuffer;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
+import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import net.minecraftforge.fml.relauncher.Side;
 
-public class MsgDelete extends Message {
+import java.io.IOException;
+
+public class MsgDelete extends AbstractMessage.AbstractServerMessage<MsgDelete> {
     private Waypoint w;
 
     public MsgDelete() {
@@ -19,27 +24,21 @@ public class MsgDelete extends Message {
     }
 
     @Override
-    public void fromBytes(ByteBuf buf) {
-        w = Waypoint.getWaypoint(buf.readInt());
+    protected void read(PacketBuffer buffer) throws IOException {
+        w = Waypoint.getWaypoint(buffer.readInt());
     }
 
     @Override
-    public void toBytes(ByteBuf buf) {
-        buf.writeInt(w.id);
+    protected void write(PacketBuffer buffer) throws IOException {
+        buffer.writeInt(w.id);
     }
 
-    public static class Handler implements IMessageHandler<MsgDelete, IMessage> {
+    @Override
+    public void process(EntityPlayer player, Side side) {
+        if (w == null) return;
 
-        @Override
-        public IMessage onMessage(MsgDelete message, MessageContext ctx) {
-            EntityPlayerMP player = ctx.getServerHandler().playerEntity;
-            if (message.w == null) return null;
-
-            WaypointPlayerInfo info = WaypointPlayerInfo.get(player.getDisplayName());
-            if (info == null) return null;
-            info.removeWaypoint(message.w.id);
-
-            return null;
-        }
+        WaypointPlayerInfo info = WaypointPlayerInfo.get(player.getUniqueID().toString());
+        if (info == null) return;
+        info.removeWaypoint(w.id);
     }
 }

@@ -6,8 +6,11 @@ import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.BlockPos;
+import net.minecraft.util.MathHelper;
 import net.minecraft.world.Teleporter;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldProvider;
 import net.minecraft.world.WorldServer;
 
 public class WaypointTeleporter extends Teleporter {
@@ -28,10 +31,10 @@ public class WaypointTeleporter extends Teleporter {
             if (thePlayer.dimension != dim) {
                 mcServer.getConfigurationManager().transferPlayerToDimension(thePlayer, dim, new WaypointTeleporter(mcServer.worldServerForDimension(dim)));
             }
-            int size = BlockWaypoint.checkSize(thePlayer.worldObj, w.x, w.y, w.z);
-            double x = w.x + size / 2.0;
-            double y = w.y + 0.5;
-            double z = w.z + size / 2.0;
+            int size = BlockWaypoint.checkSize(thePlayer.worldObj, w.pos, 0);
+            double x = w.pos.getX() + size / 2.0;
+            double y = w.pos.getY() + 0.5;
+            double z = w.pos.getZ() + size / 2.0;
 
             thePlayer.setLocationAndAngles(x, y, z, thePlayer.rotationYaw, thePlayer.rotationPitch);
             thePlayer.setPositionAndUpdate(x, y, z);
@@ -42,10 +45,10 @@ public class WaypointTeleporter extends Teleporter {
                 theMob.timeUntilPortal = 300;
                 travelToDimension(theMob, dim, w);
             } else {
-                int size = BlockWaypoint.checkSize(theMob.worldObj, w.x, w.y, w.z);
-                double x = w.x + size / 2.0;
-                double y = w.y + 0.5;
-                double z = w.z + size / 2.0;
+                int size = BlockWaypoint.checkSize(theMob.worldObj, w.pos, 0);
+                double x = w.pos.getX() + size / 2.0;
+                double y = w.pos.getY() + 0.5;
+                double z = w.pos.getZ() + size / 2.0;
                 theMob.setLocationAndAngles(x, y, z, theMob.rotationYaw, theMob.rotationPitch);
                 theMob.setPositionAndUpdate(x, y, z);
             }
@@ -54,48 +57,68 @@ public class WaypointTeleporter extends Teleporter {
         return false;
     }
 
-    public void travelToDimension(EntityLiving entityLiving, int dim, Waypoint w) {
-        if (!entityLiving.worldObj.isRemote && !entityLiving.isDead) {
-            entityLiving.worldObj.theProfiler.startSection("changeDimension");
+    public void travelToDimension(EntityLiving entityIn, int dim, Waypoint w) {
+        if (!entityIn.worldObj.isRemote && !entityIn.isDead) {
             MinecraftServer minecraftserver = MinecraftServer.getServer();
-            int j = entityLiving.dimension;
+            int j = entityIn.dimension;
             WorldServer wsOld = minecraftserver.worldServerForDimension(j);
             WorldServer wsNew = minecraftserver.worldServerForDimension(dim);
-            entityLiving.dimension = dim;
+            WorldProvider pOld = wsOld.provider;
+            WorldProvider pNew = wsNew.provider;
+            double moveFactor = pOld.getMovementFactor() / pNew.getMovementFactor();
+            double d0 = entityIn.posX * moveFactor;
+            double d1 = entityIn.posZ * moveFactor;
+            double d2 = 8.0D;
+            float f = entityIn.rotationYaw;
+            wsOld.theProfiler.startSection("moving");
+            if(entityIn.dimension == 1) {
+                int size = BlockWaypoint.checkSize(wsNew, w.pos, 0);
+                double x = w.pos.getX() + size / 2.0;
+                double y = w.pos.getY() + 0.5;
+                double z = w.pos.getZ() + size / 2.0;
 
-            if (j == 1 && dim == 1) {
-                wsNew = minecraftserver.worldServerForDimension(0);
-                entityLiving.dimension = 0;
+                BlockPos blockpos = new BlockPos(x,y,z);
+
+                d0 = (double)blockpos.getX();
+                entityIn.posY = (double)blockpos.getY();
+                d1 = (double)blockpos.getZ();
+                entityIn.setLocationAndAngles(d0, y, d1, entityIn.rotationYaw, entityIn.rotationPitch);
+                if(entityIn.isEntityAlive()) {
+                    wsOld.updateEntityWithOptionalForce(entityIn, false);
+                }
             }
 
-            entityLiving.worldObj.removeEntity(entityLiving);
-            entityLiving.isDead = false;
-            entityLiving.worldObj.theProfiler.startSection("reposition");
-            minecraftserver.getConfigurationManager().transferEntityToWorld(entityLiving, j, wsOld, wsNew);
-            entityLiving.worldObj.theProfiler.endStartSection("reloading");
-            Entity entity = EntityList.createEntityByName(EntityList.getEntityString(entityLiving), wsNew);
-            if (entity != null) {
-                int size = BlockWaypoint.checkSize(wsNew, w.x, w.y, w.z);
-                double x = w.x + size / 2.0;
-                double y = w.y + 0.5;
-                double z = w.z + size / 2.0;
+            wsOld.theProfiler.endSection();
+            if(j != 1) {
+                wsOld.theProfiler.startSection("placing");
+                int size = BlockWaypoint.checkSize(wsNew, w.pos, 0);
+                double x = w.pos.getX() + size / 2.0;
+                double y = w.pos.getY() + 0.5;
+                double z = w.pos.getZ() + size / 2.0;
 
-                wsNew.spawnEntityInWorld(entity);
-                entity.setLocationAndAngles(x, y, z, entity.rotationYaw, entity.rotationPitch);
-                ((EntityLiving) entity).setPositionAndUpdate(x, y, z);
+                BlockPos blockpos = new BlockPos(x,y,z);
+
+                d0 = (double)blockpos.getX();
+                entityIn.posY = (double)blockpos.getY();
+                d1 = (double)blockpos.getZ();
+
+                if(entityIn.isEntityAlive()) {
+                    entityIn.setLocationAndAngles(d0, entityIn.posY, d1, entityIn.rotationYaw, entityIn.rotationPitch);
+                    this.placeInPortal(entityIn, f);
+                    wsNew.spawnEntityInWorld(entityIn);
+                    wsNew.updateEntityWithOptionalForce(entityIn, false);
+                }
+
+                wsOld.theProfiler.endSection();
             }
 
-            entityLiving.isDead = true;
-            entityLiving.worldObj.theProfiler.endSection();
-            wsOld.resetUpdateEntityTick();
-            wsNew.resetUpdateEntityTick();
-            entityLiving.worldObj.theProfiler.endSection();
+            entityIn.setWorld(wsNew);
         }
 
     }
 
     @Override
-    public boolean placeInExistingPortal(Entity par1Entity, double par2, double par4, double par6, float par8) {
+    public boolean placeInExistingPortal(Entity entityIn, float p_180620_2_) {
         return false;
     }
 
@@ -104,6 +127,6 @@ public class WaypointTeleporter extends Teleporter {
     }
 
     @Override
-    public void placeInPortal(Entity par1Entity, double par2, double par4, double par6, float par8) {
+    public void placeInPortal(Entity entityIn, float rotationYaw) {
     }
 }

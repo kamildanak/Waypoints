@@ -1,17 +1,22 @@
 package info.jbcs.minecraft.waypoints.network;
 
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.network.simpleimpl.IMessage;
-import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
-import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import info.jbcs.minecraft.waypoints.Waypoint;
+import info.jbcs.minecraft.waypoints.WaypointPlayerInfo;
 import info.jbcs.minecraft.waypoints.gui.GuiWaypoints;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.network.PacketBuffer;
+import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
+import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import net.minecraftforge.fml.relauncher.Side;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class MsgWaypointsList extends Message {
+public class MsgWaypointsList extends AbstractMessage.AbstractClientMessage<MsgWaypointsList> {
     private ArrayList<Waypoint> waypoints;
     private int srcWaypointId;
 
@@ -24,39 +29,37 @@ public class MsgWaypointsList extends Message {
     }
 
     @Override
-    public void fromBytes(ByteBuf buf) {
-        srcWaypointId = buf.readInt();
-        int count = buf.readInt();
+    protected void read(PacketBuffer buffer) throws IOException {
+        srcWaypointId = buffer.readInt();
+        int count = buffer.readInt();
 
         waypoints = new ArrayList<Waypoint>();
         for (int i = 0; i < count; i++) {
             try {
-                waypoints.add(new Waypoint(buf));
+                waypoints.add(new Waypoint(buffer));
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+
     }
 
     @Override
-    public void toBytes(ByteBuf buf) {
-        buf.writeInt(srcWaypointId);
-        buf.writeInt(waypoints.size());
+    protected void write(PacketBuffer buffer) throws IOException {
+        buffer.writeInt(srcWaypointId);
+        buffer.writeInt(waypoints.size());
         for (Waypoint w : waypoints) {
             try {
-                w.write(buf);
+                w.write(buffer);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+
     }
 
-    public static class Handler implements IMessageHandler<MsgWaypointsList, IMessage> {
-
-        @Override
-        public IMessage onMessage(MsgWaypointsList message, MessageContext ctx) {
-            FMLCommonHandler.instance().showGuiScreen(new GuiWaypoints(message.srcWaypointId, message.waypoints));
-            return null;
-        }
+    @Override
+    public void process(EntityPlayer player, Side side) {
+        FMLCommonHandler.instance().showGuiScreen(new GuiWaypoints(srcWaypointId, waypoints));
     }
 }

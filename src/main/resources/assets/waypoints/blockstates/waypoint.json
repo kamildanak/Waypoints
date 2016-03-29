@@ -1,0 +1,16 @@
+{
+    "variants": {
+        "normal": { "model": "waypoints:waypoint" },
+        "type=base": { "model":"waypoints:waypoint" },
+        "type=1": { "model":"waypoints:waypoint_s1" },
+        "type=2": { "model":"waypoints:waypoint_s2" },
+        "type=3": { "model":"waypoints:waypoint_s3" },
+        "type=4": { "model":"waypoints:waypoint_s4" },
+        "type=5": { "model":"waypoints:waypoint_s5" },
+        "type=6": { "model":"waypoints:waypoint_s6" },
+        "type=7": { "model":"waypoints:waypoint_s7" },
+        "type=8": { "model":"waypoints:waypoint_s8" },
+        "type=9": { "model":"waypoints:waypoint_s9" },
+        "inventory": { "model": "waypoints:waypoint" }
+    }
+}

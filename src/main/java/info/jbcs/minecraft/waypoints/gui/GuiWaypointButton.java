@@ -39,7 +39,7 @@ public class GuiWaypointButton extends GuiExButton {
 
             if (!Waypoints.compactView) {
                 gui.drawStringWithShadow("Dimension: " + dimName, x + 4, y + 14, 0xff808080);
-                gui.drawStringWithShadow("Coordinates: (" + waypoint.x + ", " + waypoint.y + ", " + waypoint.z + ")", x + 4, y + 25, 0xff808080);
+                gui.drawStringWithShadow("Coordinates: (" + waypoint.pos.getX() + ", " + waypoint.pos.getY() + ", " + waypoint.pos.getZ() + ")", x + 4, y + 25, 0xff808080);
             }
         }
     }

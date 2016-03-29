@@ -1,13 +1,22 @@
 package info.jbcs.minecraft.waypoints.network;
 
-import cpw.mods.fml.common.network.simpleimpl.IMessage;
-import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
-import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import info.jbcs.minecraft.waypoints.Waypoint;
+import info.jbcs.minecraft.waypoints.WaypointPlayerInfo;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.network.PacketBuffer;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
+import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import net.minecraftforge.fml.relauncher.Side;
 
-public class MsgRedDust extends Message {
+import java.io.IOException;
+
+public class MsgRedDust extends AbstractMessage.AbstractClientMessage<MsgRedDust> {
     private int dimension;
     private double x, y, z;
 
@@ -22,20 +31,36 @@ public class MsgRedDust extends Message {
     }
 
     @Override
-    public void fromBytes(ByteBuf buf) {
-        dimension = buf.readInt();
-        x = buf.readDouble();
-        y = buf.readDouble() + 2;
-        z = buf.readDouble();
+    protected void read(PacketBuffer buffer) throws IOException {
+        dimension = buffer.readInt();
+        x = buffer.readDouble();
+        y = buffer.readDouble() + 2;
+        z = buffer.readDouble();
+
     }
 
     @Override
-    public void toBytes(ByteBuf buf) {
-        buf.writeInt(dimension);
-        buf.writeDouble(x);
-        buf.writeDouble(y);
-        buf.writeDouble(z);
+    protected void write(PacketBuffer buffer) throws IOException {
+        buffer.writeInt(dimension);
+        buffer.writeDouble(x);
+        buffer.writeDouble(y);
+        buffer.writeDouble(z);
+
     }
+
+    @Override
+    public void process(EntityPlayer player, Side side) {
+        World world = Minecraft.getMinecraft().theWorld;
+        for (int ex = 0; ex < 8; ex++) {
+            for (int ey = 0; ey < 8; ey++) {
+                for (int ez = 0; ez < 8; ez++) {
+                    world.spawnParticle(EnumParticleTypes.REDSTONE, this.x - 1 + ex/4.0, this.y - 1.8 + ey/4.0,
+                            this.z - 1 + ez/4.0, 110.0D/250, 25.0D/250, 130.0D/250);
+                }
+            }
+        }
+    }
+
 
     public int getDimension() {
         return dimension;
@@ -51,21 +76,5 @@ public class MsgRedDust extends Message {
 
     public double getZ() {
         return z;
-    }
-
-    public static class Handler implements IMessageHandler<MsgRedDust, IMessage> {
-
-        @Override
-        public IMessage onMessage(MsgRedDust message, MessageContext ctx) {
-            World world = Minecraft.getMinecraft().theWorld;
-            for (int ex = 0; ex < 8; ex++) {
-                for (int ey = 0; ey < 8; ey++) {
-                    for (int ez = 0; ez < 8; ez++) {
-                        world.spawnParticle("reddust", message.x - 1 + ex / 4.0, message.y - 1.8 + ey / 4.0, message.z - 1 + ez / 4.0, 110.0D / 250, 25.0D / 250, 130.0D / 250);
-                    }
-                }
-            }
-            return null;
-        }
     }
 }
