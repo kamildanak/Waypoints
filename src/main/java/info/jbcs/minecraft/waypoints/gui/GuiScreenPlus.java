@@ -2,11 +2,8 @@ package info.jbcs.minecraft.waypoints.gui;
 
 import info.jbcs.minecraft.waypoints.GeneralClient;
 import info.jbcs.minecraft.waypoints.inventory.DummyContainer;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.inventory.Container;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -23,7 +20,11 @@ public class GuiScreenPlus extends GuiContainer {
     public GuiElement root;
 
     String backgroundTexture;
-
+    InputMouseEvent mouseEvent = new InputMouseEvent();
+    int oldX = -1;
+    int oldY = -1;
+    boolean[] downButtons = new boolean[12];
+    InputKeyboardEvent keyboardEvent = new InputKeyboardEvent();
     public GuiScreenPlus(Container container, int w, int h, String backgroundTexture) {
         super(container);
         root = new GuiElement(0, 0, w, h);
@@ -48,12 +49,6 @@ public class GuiScreenPlus extends GuiContainer {
 
         Keyboard.enableRepeatEvents(true);
     }
-
-    InputMouseEvent mouseEvent = new InputMouseEvent();
-    int oldX = -1;
-    int oldY = -1;
-
-    boolean[] downButtons = new boolean[12];
 
     @Override
     public void handleMouseInput() throws IOException {
@@ -102,8 +97,6 @@ public class GuiScreenPlus extends GuiContainer {
             super.handleMouseInput();
         }
     }
-
-    InputKeyboardEvent keyboardEvent = new InputKeyboardEvent();
 
     @Override
     public void handleKeyboardInput() throws IOException {
@@ -178,7 +171,7 @@ public class GuiScreenPlus extends GuiContainer {
     }
 
     public void drawTiledRect(int rx, int ry, int rw, int rh, int u, int v, int tw, int th) {
-        if(rw==0 || rh==0 || tw==0 || th==0) return;
+        if (rw == 0 || rh == 0 || tw == 0 || th == 0) return;
 
         float pixel = 0.00390625f;
 

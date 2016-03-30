@@ -1,13 +1,10 @@
 package info.jbcs.minecraft.waypoints;
 
 import info.jbcs.minecraft.waypoints.block.BlockWaypoint;
-import info.jbcs.minecraft.waypoints.gui.GuiEditWaypoint;
 import info.jbcs.minecraft.waypoints.gui.GuiHandler;
-import info.jbcs.minecraft.waypoints.inventory.DummyContainer;
 import info.jbcs.minecraft.waypoints.item.ItemWaypoint;
 import info.jbcs.minecraft.waypoints.proxy.Proxy;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemBlock;
@@ -33,30 +30,25 @@ public class Waypoints {
     public static final String MODID = "Waypoints";
     public static final String MODNAME = "Waypoints";
     public static final String VERSION = "1.8.9-1.1.1";
-
-    static Configuration config;
     public static boolean compactView;
     public static String default_recipe = "3x2,minecraft:stone:1,minecraft:stone:1,minecraft:stone:1,minecraft:stone:1,minecraft:ender_pearl:1,minecraft:stone:1";
     public static String recipe;
     public static boolean craftable;
     public static boolean allowActivation;
     public static GuiHandler guiEditWaypointh;
-
     public static int maxSize = 3;
-
     public static BlockWaypoint blockWaypoint;
-
     @Mod.Instance("Waypoints")
     public static Waypoints instance;
-
     public static CreativeTabs tabWaypoints;
-    private File loadedWorldDir;
     public static ItemBlock itemWaypoint;
-
     @SidedProxy(clientSide = "info.jbcs.minecraft.waypoints.proxy.ProxyClient", serverSide = "info.jbcs.minecraft.waypoints.proxy.Proxy")
     public static Proxy proxy;
+    static Configuration config;
+    private File loadedWorldDir;
 
-    public Waypoints() {}
+    public Waypoints() {
+    }
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
@@ -78,7 +70,8 @@ public class Waypoints {
         compactView = config.get("general", "compact view", true, "Only show one line in Waypoint GUI, in order to fit more waypoints on the screen").getBoolean();
         //recipe = config.get("general", "recipe", default_recipe, "You can change crafting recipe here").getString();
         craftable = config.get("general", "craftable", true, "Set to false to completely disable crafting recipe").getBoolean();
-        if (craftable) addRecipe(new ItemStack(blockWaypoint, 1), "SSS", "SES", 'S', Blocks.stone, 'E', Items.ender_pearl);
+        if (craftable)
+            addRecipe(new ItemStack(blockWaypoint, 1), "SSS", "SES", 'S', Blocks.stone, 'E', Items.ender_pearl);
         allowActivation = config.get("general", "can_no_ops_activate", true, "If set to false only ops can enable Waypoins").getBoolean();
         MinecraftForge.EVENT_BUS.register(this);
         config.save();

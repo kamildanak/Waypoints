@@ -7,23 +7,20 @@ import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.util.ResourceLocation;
 
 public class GuiExButton extends GuiElement {
-    protected String caption;
-
-    int u, v, texw, texh;
-    int borderTop, borderRight, borderBottom, borderLeft;
-
-    boolean over;
     public boolean disabled;
-
     public TexturedBox boxDisabled;
     public TexturedBox boxNormal;
     public TexturedBox boxOver;
+    protected String caption;
+    int u, v, texw, texh;
+    int borderTop, borderRight, borderBottom, borderLeft;
+    boolean over;
 
     public GuiExButton(int x, int y, int w, int h, String caption) {
         this(x, y, w, h, caption, "textures/gui/widgets.png");
     }
 
-    public GuiExButton(int x, int y, int w, int h, String caption,String texture) {
+    public GuiExButton(int x, int y, int w, int h, String caption, String texture) {
         super(x, y, w, h);
         this.caption = caption;
         disabled = false;

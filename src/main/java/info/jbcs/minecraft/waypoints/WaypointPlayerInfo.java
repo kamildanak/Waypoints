@@ -19,8 +19,8 @@ public class WaypointPlayerInfo {
     String username;
     boolean changed = false;
 
-    File getFile() {
-        return new File(location, username + ".dat");
+    WaypointPlayerInfo(String n) {
+        username = n.replaceAll("[^\\p{L}\\p{Nd}_]", "");
     }
 
     public static WaypointPlayerInfo get(String nn) {
@@ -43,6 +43,17 @@ public class WaypointPlayerInfo {
         }
 
         return info;
+    }
+
+    public static void writeAll() throws IOException {
+        for (WaypointPlayerInfo info : objects.values()) {
+            if (info.changed)
+                info.write(info.getFile());
+        }
+    }
+
+    File getFile() {
+        return new File(location, username + ".dat");
     }
 
     public void addWaypoint(int id) {
@@ -89,16 +100,5 @@ public class WaypointPlayerInfo {
         Files.write(file.toPath(), bytes);
 
         changed = false;
-    }
-
-    WaypointPlayerInfo(String n) {
-        username = n.replaceAll("[^\\p{L}\\p{Nd}_]", "");
-    }
-
-    public static void writeAll() throws IOException {
-        for (WaypointPlayerInfo info : objects.values()) {
-            if (info.changed)
-                info.write(info.getFile());
-        }
     }
 }

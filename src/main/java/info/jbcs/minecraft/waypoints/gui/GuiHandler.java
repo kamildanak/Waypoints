@@ -21,15 +21,6 @@ public abstract class GuiHandler implements Comparable {
         name = n;
     }
 
-    public void open(EntityPlayer player, World world, BlockPos blockPos) {
-        player.openGui(mod, index, world, blockPos.getX(), blockPos.getY(), blockPos.getZ());
-    }
-
-    @Override
-    public int compareTo(Object a) {
-        return name.compareTo(((GuiHandler) a).name);
-    }
-
     public static void register(Object mod) {
         Collections.sort(items);
         int index = 0;
@@ -58,6 +49,15 @@ public abstract class GuiHandler implements Comparable {
                 return items.get(id).getClientGuiElement(id, player, world, x, y, z);
             }
         });
+    }
+
+    public void open(EntityPlayer player, World world, BlockPos blockPos) {
+        player.openGui(mod, index, world, blockPos.getX(), blockPos.getY(), blockPos.getZ());
+    }
+
+    @Override
+    public int compareTo(Object a) {
+        return name.compareTo(((GuiHandler) a).name);
     }
 
     public abstract Object getServerGuiElement(int ID, EntityPlayer player, World world, int x, int y, int z);

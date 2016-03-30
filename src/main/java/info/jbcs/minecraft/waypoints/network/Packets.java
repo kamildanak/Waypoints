@@ -2,7 +2,6 @@ package info.jbcs.minecraft.waypoints.network;
 
 import info.jbcs.minecraft.waypoints.Waypoint;
 import info.jbcs.minecraft.waypoints.WaypointPlayerInfo;
-import info.jbcs.minecraft.waypoints.Waypoints;
 import net.minecraft.entity.player.EntityPlayerMP;
 
 import java.io.IOException;

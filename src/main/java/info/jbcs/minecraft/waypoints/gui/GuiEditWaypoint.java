@@ -1,7 +1,6 @@
 package info.jbcs.minecraft.waypoints.gui;
 
 import info.jbcs.minecraft.waypoints.Waypoint;
-import info.jbcs.minecraft.waypoints.Waypoints;
 import info.jbcs.minecraft.waypoints.network.MsgEdit;
 import info.jbcs.minecraft.waypoints.network.PacketDispatcher;
 import net.minecraft.client.Minecraft;
@@ -14,7 +13,6 @@ public class GuiEditWaypoint extends GuiScreenPlus {
     ArrayList<Waypoint> waypoints = new ArrayList<Waypoint>();
     int waypointId;
     int linkedId;
-
 
 
     public GuiEditWaypoint(final int currentWaypointId, String suggestedName, final Integer linked_id, ArrayList<Waypoint> waypoints) {

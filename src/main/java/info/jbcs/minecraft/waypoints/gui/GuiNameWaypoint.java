@@ -1,7 +1,6 @@
 package info.jbcs.minecraft.waypoints.gui;
 
 import info.jbcs.minecraft.waypoints.Waypoint;
-import info.jbcs.minecraft.waypoints.Waypoints;
 import info.jbcs.minecraft.waypoints.network.MsgName;
 import info.jbcs.minecraft.waypoints.network.PacketDispatcher;
 

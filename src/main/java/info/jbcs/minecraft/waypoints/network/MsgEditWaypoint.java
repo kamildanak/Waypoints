@@ -1,30 +1,12 @@
 package info.jbcs.minecraft.waypoints.network;
 
 import info.jbcs.minecraft.waypoints.Waypoint;
-import info.jbcs.minecraft.waypoints.WaypointPlayerInfo;
-import info.jbcs.minecraft.waypoints.Waypoints;
 import info.jbcs.minecraft.waypoints.gui.GuiEditWaypoint;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGameOver;
-import net.minecraft.client.gui.GuiMainMenu;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.ScaledResolution;
-import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.client.event.GuiOpenEvent;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
-import org.lwjgl.LWJGLException;
-import org.lwjgl.input.Mouse;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -79,7 +61,7 @@ public class MsgEditWaypoint extends AbstractMessage.AbstractClientMessage<MsgEd
 
     @Override
     public void process(EntityPlayer player, Side side) {
-        if(side.isServer()) return;
+        if (side.isServer()) return;
         FMLCommonHandler.instance().showGuiScreen(new GuiEditWaypoint(this.id, this.name, this.linked_id, this.waypoints));
 
     }

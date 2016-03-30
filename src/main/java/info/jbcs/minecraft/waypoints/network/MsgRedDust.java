@@ -1,17 +1,10 @@
 package info.jbcs.minecraft.waypoints.network;
 
-import info.jbcs.minecraft.waypoints.Waypoint;
-import info.jbcs.minecraft.waypoints.WaypointPlayerInfo;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 
 import java.io.IOException;
@@ -54,8 +47,8 @@ public class MsgRedDust extends AbstractMessage.AbstractClientMessage<MsgRedDust
         for (int ex = 0; ex < 8; ex++) {
             for (int ey = 0; ey < 8; ey++) {
                 for (int ez = 0; ez < 8; ez++) {
-                    world.spawnParticle(EnumParticleTypes.REDSTONE, this.x - 1 + ex/4.0, this.y - 1.8 + ey/4.0,
-                            this.z - 1 + ez/4.0, 110.0D/250, 25.0D/250, 130.0D/250);
+                    world.spawnParticle(EnumParticleTypes.REDSTONE, this.x - 1 + ex / 4.0, this.y - 1.8 + ey / 4.0,
+                            this.z - 1 + ez / 4.0, 110.0D / 250, 25.0D / 250, 130.0D / 250);
                 }
             }
         }

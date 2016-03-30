@@ -1,19 +1,11 @@
 package info.jbcs.minecraft.waypoints.network;
 
 import info.jbcs.minecraft.waypoints.Waypoint;
-import info.jbcs.minecraft.waypoints.WaypointPlayerInfo;
-import info.jbcs.minecraft.waypoints.Waypoints;
 import info.jbcs.minecraft.waypoints.block.BlockWaypoint;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.BlockPos;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.relauncher.Side;
 
 import java.io.IOException;
@@ -45,7 +37,7 @@ public class MsgTeleport extends AbstractMessage.AbstractServerMessage<MsgTelepo
 
     @Override
     public void process(EntityPlayer player, Side side) {
-        if (src == null || dest == null) return ;
+        if (src == null || dest == null) return;
 
         if (!BlockWaypoint.isEntityOnWaypoint(player.worldObj, src.pos, player)) return;
         player.mountEntity((Entity) null);

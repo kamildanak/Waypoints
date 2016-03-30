@@ -5,7 +5,6 @@ import io.netty.buffer.Unpooled;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.BlockPos;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
-import org.lwjgl.Sys;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,18 +13,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Waypoint {
-    public int id;
-    public BlockPos pos;
-    public int  dimension;
-    public String name;
-    public int linked_id;
-    public boolean powered;
-
+    public static ArrayList<Waypoint> existingWaypoints = new ArrayList<Waypoint>();
+    public static boolean changed;
     static HashMap<String, Waypoint> waypointsLocationMap = new HashMap<String, Waypoint>();
     static Waypoint waypoints[] = new Waypoint[0x400];
     static int nextId = 0;
-    public static ArrayList<Waypoint> existingWaypoints = new ArrayList<Waypoint>();
-    public static boolean changed;
+    public int id;
+    public BlockPos pos;
+    public int dimension;
+    public String name;
+    public int linked_id;
+    public boolean powered;
 
     public Waypoint() {
         id = -1;
@@ -40,6 +38,86 @@ public class Waypoint {
     public Waypoint(ByteBuf stream) throws IOException {
         id = -1;
         read(stream);
+    }
+
+    public static String locKey(BlockPos pos, int dimension) {
+        return pos.getX() + "|" + pos.getY() + "|" + pos.getZ() + ":" + dimension;
+    }
+
+    public static Waypoint getWaypoint(int id) {
+        if (id < 0 || id >= waypoints.length)
+            return null;
+
+        return waypoints[id];
+    }
+
+    public static void removeWaypoint(Waypoint wp) {
+        waypoints[wp.id] = null;
+        waypointsLocationMap.remove(locKey(wp.pos, wp.dimension));
+        existingWaypoints.remove(wp);
+
+        changed = true;
+    }
+
+    public static Waypoint getWaypoint(BlockPos pos, int dimension) {
+        String key = locKey(pos, dimension);
+        Waypoint wp = waypointsLocationMap.get(key);
+
+        if (wp == null) {
+            int startId = nextId;
+            while (waypoints[nextId] != null) {
+                nextId = (nextId + 1) % waypoints.length;
+                if (nextId == startId) return null;
+            }
+
+            wp = new Waypoint();
+            wp.initialize(nextId, pos, dimension);
+            wp.name = "";
+        }
+
+        return wp;
+    }
+
+    public static void write(File file) throws IOException {
+        if (!changed) return;
+        changed = false;
+
+        int index = 0;
+        NBTTagCompound tag = new NBTTagCompound();
+        tag.setInteger("count", existingWaypoints.size());
+        for (Waypoint w : existingWaypoints) {
+            NBTTagCompound wtag = new NBTTagCompound();
+            w.write(wtag);
+            tag.setTag("" + (index++), wtag);
+            System.out.println(w.pos.getX() + "_" + w.pos.getY() + "_" + w.pos.getZ());
+        }
+
+        ByteBuf buffer = Unpooled.buffer();
+        ByteBufUtils.writeTag(buffer, tag);
+        byte[] bytes = new byte[buffer.readableBytes()];
+        buffer.readBytes(bytes);
+        Files.write(file.toPath(), bytes);
+    }
+
+    public static void read(File file) throws IOException {
+        existingWaypoints.clear();
+        waypointsLocationMap.clear();
+        nextId = 0;
+        waypoints = new Waypoint[0x400];
+        changed = false;
+
+        byte[] bytes = Files.readAllBytes(file.toPath());
+
+        ByteBuf buffer = Unpooled.buffer();
+        buffer.writeBytes(bytes);
+        NBTTagCompound tag = ByteBufUtils.readTag(buffer);
+
+        int count = tag.getInteger("count");
+        for (int i = 0; i < count; i++) {
+            Waypoint w = new Waypoint();
+            w.read(tag.getCompoundTag("" + i));
+            if (nextId <= w.id) nextId = w.id + 1;
+        }
     }
 
     public void write(ByteBuf stream) throws IOException {
@@ -86,25 +164,6 @@ public class Waypoint {
         powered = tag.getBoolean("powered");
     }
 
-    public static String locKey(BlockPos pos, int dimension) {
-        return pos.getX() + "|" + pos.getY() + "|" + pos.getZ() + ":" + dimension;
-    }
-
-    public static Waypoint getWaypoint(int id) {
-        if (id < 0 || id >= waypoints.length)
-            return null;
-
-        return waypoints[id];
-    }
-
-    public static void removeWaypoint(Waypoint wp) {
-        waypoints[wp.id] = null;
-        waypointsLocationMap.remove(locKey(wp.pos, wp.dimension));
-        existingWaypoints.remove(wp);
-
-        changed = true;
-    }
-
     void initialize(int id, BlockPos pos, int dimension) {
         String key = locKey(pos, dimension);
 
@@ -115,66 +174,5 @@ public class Waypoint {
         waypointsLocationMap.put(key, this);
         existingWaypoints.add(this);
         changed = true;
-    }
-
-    public static Waypoint getWaypoint(BlockPos pos, int dimension) {
-        String key = locKey(pos, dimension);
-        Waypoint wp = waypointsLocationMap.get(key);
-
-        if (wp == null) {
-            int startId = nextId;
-            while (waypoints[nextId] != null) {
-                nextId = (nextId + 1) % waypoints.length;
-                if (nextId == startId) return null;
-            }
-
-            wp = new Waypoint();
-            wp.initialize(nextId, pos, dimension);
-            wp.name = "";
-        }
-
-        return wp;
-    }
-
-    public static void write(File file) throws IOException {
-        if (!changed) return;
-        changed = false;
-
-        int index = 0;
-        NBTTagCompound tag = new NBTTagCompound();
-        tag.setInteger("count", existingWaypoints.size());
-        for (Waypoint w : existingWaypoints) {
-            NBTTagCompound wtag = new NBTTagCompound();
-            w.write(wtag);
-            tag.setTag("" + (index++), wtag);
-            System.out.println(w.pos.getX() +"_"+ w.pos.getY() +"_"+ w.pos.getZ());
-        }
-
-        ByteBuf buffer = Unpooled.buffer();
-        ByteBufUtils.writeTag(buffer, tag);
-        byte[] bytes = new byte[buffer.readableBytes()];
-        buffer.readBytes(bytes);
-        Files.write(file.toPath(), bytes);
-    }
-
-    public static void read(File file) throws IOException {
-        existingWaypoints.clear();
-        waypointsLocationMap.clear();
-        nextId = 0;
-        waypoints = new Waypoint[0x400];
-        changed = false;
-
-        byte[] bytes = Files.readAllBytes(file.toPath());
-
-        ByteBuf buffer = Unpooled.buffer();
-        buffer.writeBytes(bytes);
-        NBTTagCompound tag = ByteBufUtils.readTag(buffer);
-
-        int count = tag.getInteger("count");
-        for (int i = 0; i < count; i++) {
-            Waypoint w = new Waypoint();
-            w.read(tag.getCompoundTag("" + i));
-            if (nextId <= w.id) nextId = w.id + 1;
-        }
     }
 }

@@ -1,11 +1,7 @@
 package info.jbcs.minecraft.waypoints.proxy;
 
-import info.jbcs.minecraft.waypoints.Waypoint;
 import info.jbcs.minecraft.waypoints.Waypoints;
-import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ItemModelMesher;
-import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
@@ -15,6 +11,12 @@ import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 public class ProxyClient extends Proxy {
     private Minecraft mc;
 
+    public static void reg(Item item) {
+        Minecraft.getMinecraft().getRenderItem().getItemModelMesher().register
+                (item, 0, new ModelResourceLocation(Waypoints.MODID + ":" + item.getUnlocalizedName().substring(5), "inventory"));
+
+    }
+
     @Override
     public void preInit() {
     }
@@ -23,12 +25,6 @@ public class ProxyClient extends Proxy {
     public void init() {
         mc = Minecraft.getMinecraft();
         reg(Item.getItemFromBlock(Waypoints.blockWaypoint));
-    }
-
-    public static void reg(Item item) {
-        Minecraft.getMinecraft().getRenderItem().getItemModelMesher().register
-                (item, 0, new ModelResourceLocation(Waypoints.MODID + ":" + item.getUnlocalizedName().substring(5), "inventory"));
-
     }
 
     @Override

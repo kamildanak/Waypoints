@@ -12,21 +12,20 @@ public class GuilScrolledBox extends GuiElement {
     public int offset = 0;
     int contentHeight = 0;
     int scrollingStart = -1;
+    int x0, x1;
 
     public GuilScrolledBox(int x, int y, int w, int h) {
         super(x, y, w, h);
     }
-
-    int x0, x1;
 
     protected void overlayBackground(int start, int end, int color, int a1, int a2) {
         Tessellator tessellator = Tessellator.getInstance();
         WorldRenderer worldrenderer = tessellator.getWorldRenderer();
 
         float a = 225;
-        float r = (float)(color >> 16 & 255) / 255.0F;
-        float g = (float)(color >> 8 & 255) / 255.0F;
-        float b = (float)(color & 255) / 255.0F;
+        float r = (float) (color >> 16 & 255) / 255.0F;
+        float g = (float) (color >> 8 & 255) / 255.0F;
+        float b = (float) (color & 255) / 255.0F;
 
 
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);

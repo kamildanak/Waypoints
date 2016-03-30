@@ -2,12 +2,10 @@ package info.jbcs.minecraft.waypoints;
 
 import info.jbcs.minecraft.waypoints.block.BlockWaypoint;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.BlockPos;
-import net.minecraft.util.MathHelper;
 import net.minecraft.world.Teleporter;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProvider;
@@ -71,38 +69,38 @@ public class WaypointTeleporter extends Teleporter {
             double d2 = 8.0D;
             float f = entityIn.rotationYaw;
             wsOld.theProfiler.startSection("moving");
-            if(entityIn.dimension == 1) {
+            if (entityIn.dimension == 1) {
                 int size = BlockWaypoint.checkSize(wsNew, w.pos, 0);
                 double x = w.pos.getX() + size / 2.0;
                 double y = w.pos.getY() + 0.5;
                 double z = w.pos.getZ() + size / 2.0;
 
-                BlockPos blockpos = new BlockPos(x,y,z);
+                BlockPos blockpos = new BlockPos(x, y, z);
 
-                d0 = (double)blockpos.getX();
-                entityIn.posY = (double)blockpos.getY();
-                d1 = (double)blockpos.getZ();
+                d0 = (double) blockpos.getX();
+                entityIn.posY = (double) blockpos.getY();
+                d1 = (double) blockpos.getZ();
                 entityIn.setLocationAndAngles(d0, y, d1, entityIn.rotationYaw, entityIn.rotationPitch);
-                if(entityIn.isEntityAlive()) {
+                if (entityIn.isEntityAlive()) {
                     wsOld.updateEntityWithOptionalForce(entityIn, false);
                 }
             }
 
             wsOld.theProfiler.endSection();
-            if(j != 1) {
+            if (j != 1) {
                 wsOld.theProfiler.startSection("placing");
                 int size = BlockWaypoint.checkSize(wsNew, w.pos, 0);
                 double x = w.pos.getX() + size / 2.0;
                 double y = w.pos.getY() + 0.5;
                 double z = w.pos.getZ() + size / 2.0;
 
-                BlockPos blockpos = new BlockPos(x,y,z);
+                BlockPos blockpos = new BlockPos(x, y, z);
 
-                d0 = (double)blockpos.getX();
-                entityIn.posY = (double)blockpos.getY();
-                d1 = (double)blockpos.getZ();
+                d0 = (double) blockpos.getX();
+                entityIn.posY = (double) blockpos.getY();
+                d1 = (double) blockpos.getZ();
 
-                if(entityIn.isEntityAlive()) {
+                if (entityIn.isEntityAlive()) {
                     entityIn.setLocationAndAngles(d0, entityIn.posY, d1, entityIn.rotationYaw, entityIn.rotationPitch);
                     this.placeInPortal(entityIn, f);
                     wsNew.spawnEntityInWorld(entityIn);

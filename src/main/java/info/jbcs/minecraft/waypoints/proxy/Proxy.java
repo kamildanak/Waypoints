@@ -4,7 +4,6 @@ import info.jbcs.minecraft.waypoints.network.*;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.IThreadListener;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
 
 public class Proxy {
     public void preInit() {
