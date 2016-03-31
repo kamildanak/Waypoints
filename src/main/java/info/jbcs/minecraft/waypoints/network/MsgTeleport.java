@@ -1,15 +1,21 @@
 package info.jbcs.minecraft.waypoints.network;
 
 import info.jbcs.minecraft.waypoints.Waypoint;
+import info.jbcs.minecraft.waypoints.WaypointTeleporter;
+import info.jbcs.minecraft.waypoints.Waypoints;
 import info.jbcs.minecraft.waypoints.block.BlockWaypoint;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.network.PacketBuffer;
+import net.minecraft.potion.PotionEffect;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.BlockPos;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 
 import java.io.IOException;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class MsgTeleport extends AbstractMessage.AbstractServerMessage<MsgTeleport> {
     private static Waypoint src, dest;
@@ -45,7 +51,9 @@ public class MsgTeleport extends AbstractMessage.AbstractServerMessage<MsgTelepo
 
         MsgRedDust msg1 = new MsgRedDust(player.dimension, player.posX, player.posY, player.posZ);
 
-        if (player.dimension != dest.dimension) player.travelToDimension(dest.dimension);
+        if (player.dimension != dest.dimension)
+            MinecraftServer.getServer().getConfigurationManager().transferPlayerToDimension((EntityPlayerMP) player, dest.dimension,
+                    new WaypointTeleporter(MinecraftServer.getServer().worldServerForDimension(dest.dimension)));
         BlockPos size = BlockWaypoint.checkSize(player.worldObj, dest.pos);
         player.setLocationAndAngles(dest.pos.getX() + size.getX() / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size.getZ() / 2.0, player.rotationYaw, 0);
         player.setPositionAndUpdate(dest.pos.getX() + size.getX() / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size.getZ() / 2.0);
@@ -54,6 +62,13 @@ public class MsgTeleport extends AbstractMessage.AbstractServerMessage<MsgTelepo
         PacketDispatcher.sendToAllAround(msg1, new NetworkRegistry.TargetPoint(msg1.getDimension(), msg1.getX(), msg1.getY(), msg1.getZ(), 25));
         PacketDispatcher.sendToAllAround(msg2, new NetworkRegistry.TargetPoint(msg2.getDimension(), msg2.getX(), msg2.getY(), msg2.getZ(), 25));
 
+        player.getFoodStats().addExhaustion(Waypoints.teleportationExhaustion);
+
+        for (int i = 0; i < Waypoints.potionEffects.length && i < Waypoints.potionEffectsChances.length; i++) {
+            if (ThreadLocalRandom.current().nextInt(0, 99) < Waypoints.potionEffectsChances[i]) {
+                player.addPotionEffect(new PotionEffect(Waypoints.potionEffects[i]));
+            }
+        }
     }
 
 }

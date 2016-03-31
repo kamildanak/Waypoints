@@ -8,6 +8,7 @@ import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
+import net.minecraft.potion.PotionEffect;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.ISaveHandler;
 import net.minecraft.world.storage.SaveHandler;
@@ -45,6 +46,10 @@ public class Waypoints {
     static Configuration config;
     private File loadedWorldDir;
 
+    public static PotionEffect potionEffects[];
+    public static int potionEffectsChances[];
+    public static int teleportationExhaustion;
+
     public Waypoints() {
     }
 
@@ -72,6 +77,15 @@ public class Waypoints {
         maxSize = config.get("general", "max size", 3, "Set maximum size of waypoints (default 3)").getInt();
         minSize = config.get("general", "min size", 2, "Set minimum size of waypoints (default 2)").getInt();
         allowNotSquare = config.get("general", "allow not square", false, "Set to true to allow not square (rectangular) waypoints").getBoolean();
+        // Effects and exhaustion
+        teleportationExhaustion = config.get("general", "teleportationExhaustion", 20, "Exhaustion caused by using waypoint").getInt();
+        int[] effects = config.get("general", "effects ids", new int[]{9, 9, 15}, "List of effectts id").getIntList();
+        int[] effectsDurations = config.get("general", "effects durations", new int[]{20, 30, 25}, "List off durations").getIntList();
+        potionEffectsChances = config.get("general", "effects chances", new int[]{30, 10, 5}, "List of probabilities (0-100)% that effect will appear").getIntList();
+        potionEffects = new PotionEffect[Math.min(effects.length, effectsDurations.length)];
+        for (int i = 0; i < potionEffects.length; i++)
+            potionEffects[i] = new PotionEffect(effects[i], effectsDurations[i] * 10);
+        //
         MinecraftForge.EVENT_BUS.register(this);
         config.save();
         proxy.registerPackets();
