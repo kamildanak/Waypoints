@@ -234,6 +234,11 @@ public class BlockWaypoint extends Block {
                     }
                 }
                 if (teleported) {
+                    if(Waypoints.playSounds){
+                        String sound = Waypoints.playSoundEnderman ? "mob.endermen.portal":"waypoints:teleport";
+                        world.playSoundEffect(entity.posX, entity.posY, entity.posZ, sound, 1.0f, 1.0f);
+                        world.playSoundEffect(w.pos.getX() + size.getX() / 2.0, w.pos.getY() + 0.5, w.pos.getZ() + size.getZ() / 2.0, sound, 1.0f, 1.0f);
+                    }
                     MsgRedDust msg1 = new MsgRedDust(src.dimension, entity.posX, entity.posY, entity.posZ);
                     MsgRedDust msg2 = new MsgRedDust(w.dimension, w.pos.getX() + size.getX() / 2.0, w.pos.getY() + 0.5, w.pos.getZ() + size.getZ() / 2.0);
                     PacketDispatcher.sendToAllAround(msg1, new NetworkRegistry.TargetPoint(src.dimension, entity.posX, entity.posY, entity.posZ, 25));

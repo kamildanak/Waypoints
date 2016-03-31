@@ -69,6 +69,12 @@ public class MsgTeleport extends AbstractMessage.AbstractServerMessage<MsgTelepo
                 player.addPotionEffect(new PotionEffect(Waypoints.potionEffects[i]));
             }
         }
+
+        String sound = Waypoints.playSoundEnderman ? "mob.endermen.portal":"waypoints:teleport";
+        if(Waypoints.playSounds) {
+            player.worldObj.playSoundEffect(player.posX, player.posY, player.posZ, sound, 1.0f, 1.0f);
+            player.worldObj.playSoundEffect(dest.pos.getX() + size.getX() / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size.getZ() / 2.0, sound, 1.0f, 1.0f);
+        }
     }
 
 }

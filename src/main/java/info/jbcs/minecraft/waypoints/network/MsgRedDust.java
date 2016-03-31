@@ -1,5 +1,6 @@
 package info.jbcs.minecraft.waypoints.network;
 
+import info.jbcs.minecraft.waypoints.Waypoints;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.network.PacketBuffer;

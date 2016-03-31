@@ -34,6 +34,7 @@ public class Waypoints {
     public static boolean craftable;
     public static boolean allowActivation;
     public static boolean playSounds;
+    public static boolean playSoundEnderman;
     public static int maxSize;
     public static int minSize;
     public static boolean allowNotSquare;
@@ -74,6 +75,7 @@ public class Waypoints {
             addRecipe(new ItemStack(blockWaypoint, 1), "SSS", "SES", 'S', Blocks.stone, 'E', Items.ender_pearl);
         allowActivation = config.get("general", "can_no_ops_activate", true, "If set to false only ops can enable Waypoins").getBoolean();
         playSounds = config.get("general", "play sounds", true, "Set to false to disable teleportation sounds").getBoolean();
+        playSoundEnderman = config.get("general", "play sound enderman", true, "Set to false to play custom sound").getBoolean();
         maxSize = config.get("general", "max size", 3, "Set maximum size of waypoints (default 3)").getInt();
         minSize = config.get("general", "min size", 2, "Set minimum size of waypoints (default 2)").getInt();
         allowNotSquare = config.get("general", "allow not square", false, "Set to true to allow not square (rectangular) waypoints").getBoolean();
