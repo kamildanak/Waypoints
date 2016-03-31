@@ -29,10 +29,10 @@ public class WaypointTeleporter extends Teleporter {
             if (thePlayer.dimension != dim) {
                 mcServer.getConfigurationManager().transferPlayerToDimension(thePlayer, dim, new WaypointTeleporter(mcServer.worldServerForDimension(dim)));
             }
-            int size = BlockWaypoint.checkSize(thePlayer.worldObj, w.pos, 0);
-            double x = w.pos.getX() + size / 2.0;
+            BlockPos size = BlockWaypoint.checkSize(thePlayer.worldObj, w.pos);
+            double x = w.pos.getX() + size.getX() / 2.0;
             double y = w.pos.getY() + 0.5;
-            double z = w.pos.getZ() + size / 2.0;
+            double z = w.pos.getZ() + size.getZ() / 2.0;
 
             thePlayer.setLocationAndAngles(x, y, z, thePlayer.rotationYaw, thePlayer.rotationPitch);
             thePlayer.setPositionAndUpdate(x, y, z);
@@ -43,10 +43,10 @@ public class WaypointTeleporter extends Teleporter {
                 theMob.timeUntilPortal = 300;
                 travelToDimension(theMob, dim, w);
             } else {
-                int size = BlockWaypoint.checkSize(theMob.worldObj, w.pos, 0);
-                double x = w.pos.getX() + size / 2.0;
+                BlockPos size = BlockWaypoint.checkSize(theMob.worldObj, w.pos);
+                double x = w.pos.getX() + size.getX() / 2.0;
                 double y = w.pos.getY() + 0.5;
-                double z = w.pos.getZ() + size / 2.0;
+                double z = w.pos.getZ() + size.getZ() / 2.0;
                 theMob.setLocationAndAngles(x, y, z, theMob.rotationYaw, theMob.rotationPitch);
                 theMob.setPositionAndUpdate(x, y, z);
             }
@@ -70,10 +70,10 @@ public class WaypointTeleporter extends Teleporter {
             float f = entityIn.rotationYaw;
             wsOld.theProfiler.startSection("moving");
             if (entityIn.dimension == 1) {
-                int size = BlockWaypoint.checkSize(wsNew, w.pos, 0);
-                double x = w.pos.getX() + size / 2.0;
+                BlockPos size = BlockWaypoint.checkSize(wsNew, w.pos);
+                double x = w.pos.getX() + size.getX() / 2.0;
                 double y = w.pos.getY() + 0.5;
-                double z = w.pos.getZ() + size / 2.0;
+                double z = w.pos.getZ() + size.getZ() / 2.0;
 
                 BlockPos blockpos = new BlockPos(x, y, z);
 
@@ -89,10 +89,10 @@ public class WaypointTeleporter extends Teleporter {
             wsOld.theProfiler.endSection();
             if (j != 1) {
                 wsOld.theProfiler.startSection("placing");
-                int size = BlockWaypoint.checkSize(wsNew, w.pos, 0);
-                double x = w.pos.getX() + size / 2.0;
+                BlockPos size = BlockWaypoint.checkSize(wsNew, w.pos);
+                double x = w.pos.getX() + size.getX() / 2.0;
                 double y = w.pos.getY() + 0.5;
-                double z = w.pos.getZ() + size / 2.0;
+                double z = w.pos.getZ() + size.getZ() / 2.0;
 
                 BlockPos blockpos = new BlockPos(x, y, z);
 

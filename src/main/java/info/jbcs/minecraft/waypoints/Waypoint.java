@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.BlockPos;
+import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 
 import java.io.File;
@@ -15,9 +16,9 @@ import java.util.HashMap;
 public class Waypoint {
     public static ArrayList<Waypoint> existingWaypoints = new ArrayList<Waypoint>();
     public static boolean changed;
-    static HashMap<String, Waypoint> waypointsLocationMap = new HashMap<String, Waypoint>();
-    static Waypoint waypoints[] = new Waypoint[0x400];
-    static int nextId = 0;
+    private static HashMap<String, Waypoint> waypointsLocationMap = new HashMap<String, Waypoint>();
+    private static Waypoint waypoints[] = new Waypoint[0x400];
+    private static int nextId = 0;
     public int id;
     public BlockPos pos;
     public int dimension;
@@ -33,6 +34,7 @@ public class Waypoint {
         this.id = id;
         waypoints[id] = this;
         changed = true;
+        powered = false;
     }
 
     public Waypoint(ByteBuf stream) throws IOException {
@@ -59,7 +61,25 @@ public class Waypoint {
         changed = true;
     }
 
-    public static Waypoint getWaypoint(BlockPos pos, int dimension) {
+    public static boolean isWaypoint(World world, BlockPos pos) {
+        return isWaypoint(pos, world.provider.getDimensionId());
+    }
+
+    private static boolean isWaypoint(BlockPos pos, int dimension) {
+        String key = locKey(pos, dimension);
+        return waypointsLocationMap.containsKey(key);
+    }
+
+    public static Waypoint getOrMakeWaypoint(World world, BlockPos pos) {
+        return getWaypoint(pos, world.provider.getDimensionId());
+    }
+
+    public static Waypoint getWaypoint(World world, BlockPos pos) {
+        if (!isWaypoint(world, pos)) return null;
+        return getWaypoint(pos, world.provider.getDimensionId());
+    }
+
+    private static Waypoint getWaypoint(BlockPos pos, int dimension) {
         String key = locKey(pos, dimension);
         Waypoint wp = waypointsLocationMap.get(key);
 
@@ -175,4 +195,13 @@ public class Waypoint {
         existingWaypoints.add(this);
         changed = true;
     }
+
+    public static void clear() {
+        existingWaypoints.clear();
+        waypointsLocationMap.clear();
+        nextId = 0;
+        waypoints = new Waypoint[0x400];
+        changed = false;
+    }
+
 }

@@ -4,12 +4,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;
 
 import java.util.HashMap;
-import java.util.Random;
 
 public class GeneralClient {
-    public static Random rand = new Random();
-
-    static HashMap<String, ResourceLocation> resources = new HashMap<String, ResourceLocation>();
+    private static HashMap<String, ResourceLocation> resources = new HashMap<String, ResourceLocation>();
 
     public static void bind(String textureName) {
         ResourceLocation res = resources.get(textureName);

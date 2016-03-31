@@ -5,8 +5,6 @@ import info.jbcs.minecraft.waypoints.WaypointPlayerInfo;
 import info.jbcs.minecraft.waypoints.WaypointTeleporter;
 import info.jbcs.minecraft.waypoints.Waypoints;
 import info.jbcs.minecraft.waypoints.network.*;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.IProperty;
@@ -21,7 +19,6 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.PacketBuffer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
@@ -29,12 +26,12 @@ import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.IStringSerializable;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
-import net.minecraftforge.fml.common.network.internal.FMLProxyPacket;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import static info.jbcs.minecraft.waypoints.General.isOP;
 
 public class BlockWaypoint extends Block {
 
@@ -52,85 +49,97 @@ public class BlockWaypoint extends Block {
         this.setDefaultState(this.blockState.getBaseState().withProperty(TYPE, EnumType.BASE));
     }
 
-    static public BlockPos getCorner(World world, BlockPos pos) {
-        while (world.getBlockState(pos.add(-1, 0, 0)).getBlock() == Waypoints.blockWaypoint) pos = pos.add(-1, 0, 0);
-        while (world.getBlockState(pos.add(0, 0, -1)).getBlock() == Waypoints.blockWaypoint) pos = pos.add(0, 0, -1);
+    /* Function returns corner that is saved to Waypoints database */
+    static private BlockPos getCorner(World world, BlockPos pos) {
+        return getCorner(world, pos, -1, 0, -1);
+    }
+
+    /* Function returns corner of structure that block in position given as argument assuming that it is a rectangle. */
+    static private BlockPos getCorner(World world, BlockPos pos, int x, int y, int z) {
+        if (x != 0)
+            while (world.getBlockState(pos.add(x, 0, 0)).getBlock() == Waypoints.blockWaypoint) pos = pos.add(x, 0, 0);
+        if (y != 0)
+            while (world.getBlockState(pos.add(0, y, 0)).getBlock() == Waypoints.blockWaypoint) pos = pos.add(0, y, 0);
+        if (z != 0)
+            while (world.getBlockState(pos.add(0, 0, z)).getBlock() == Waypoints.blockWaypoint) pos = pos.add(0, 0, z);
         return pos;
     }
 
     static public boolean isEntityOnWaypoint(World world, BlockPos pos, Entity entity) {
-        int size = checkSize(world, pos, 0);
-        return entity.posX >= pos.getX() && entity.posX <= pos.getX() + size && entity.posZ >= pos.getZ() && entity.posZ <= pos.getZ() + size;
+        BlockPos c1 = getCorner(world, pos, -1, 0, -1);
+        BlockPos c2 = getCorner(world, pos, 1, 0, 1);
+        return entity.posX >= c1.getX() && entity.posX <= c2.getX() + 1 && entity.posZ >= c1.getZ() && entity.posZ <= c2.getZ() + 1;
     }
 
-    static public int checkSize(World world, BlockPos pos, int broken) {
-        BlockPos corner = getCorner(world, pos);
-        int c1 = 0, c2 = 0;
-        for (int px = 0; px < 2; px++)
-            for (int pz = 0; pz < 2; pz++)
-                if (world.getBlockState(corner.add(px, 0, pz)).getBlock().equals(Waypoints.blockWaypoint)) c1++;
-        if (c1 < 4 - broken) return 1;
-
-        for (int px = 0; px < 3; px++)
-            for (int pz = 0; pz < 3; pz++)
-                if (world.getBlockState(corner.add(px, 0, pz)).getBlock().equals(Waypoints.blockWaypoint)) c2++;
-
-        if (c2 < 9 - broken)
-            if (c2 > c1) return 1;
-            else
-                return 2;
-        return 3;
+    static public BlockPos checkSize(World world, BlockPos pos) {
+        BlockPos c1 = getCorner(world, pos, -1, 0, -1);
+        BlockPos c2 = getCorner(world, pos, 1, 0, 1);
+        return new BlockPos(c2.getX() - c1.getX() + 1, 0, c2.getZ() - c1.getZ() + 1);
     }
 
-    public boolean isValidWaypoint(World world, BlockPos pos) {
-        if (checkSize(world, pos, 0) == 1) return false;
-        if (world.getBlockState(pos).getBlock() != this) return false; //checkSize do not check this one
-        if (world.getBlockState(pos).getBlock().getMetaFromState(world.getBlockState(pos)) == 0)
-            return false; //check if activated
-        //here we can check metadata it _should_ be always true so let omit this until some bug happen
+    public boolean isValid(World world, BlockPos pos) {
+        BlockPos c1 = getCorner(world, pos, -1, 0, -1);
+        BlockPos size = checkSize(world, pos);
+        if (size.getX() < Waypoints.minSize || size.getZ() < Waypoints.minSize) return false;
+        if (size.getX() > Waypoints.maxSize || size.getZ() > Waypoints.maxSize) return false;
+        if (!Waypoints.allowNotSquare && size.getX() != size.getZ()) return false;
+        // check if all blocks in rectangle are correct type
+        for (int px = 0; px < size.getX(); px++)
+            for (int pz = 0; pz < size.getZ(); pz++)
+                if (!(world.getBlockState(c1.add(px, 0, pz)).getBlock() == Waypoints.blockWaypoint)) return false;
+        // check sides
+        for (int px = 0; px < size.getX(); px++) {
+            if (world.getBlockState(c1.add(px, 0, -1)).getBlock() == Waypoints.blockWaypoint) return false;
+            if (world.getBlockState(c1.add(px, 0, size.getZ())).getBlock() == Waypoints.blockWaypoint) return false;
+        }
+        for (int pz = 0; pz < size.getZ(); pz++) {
+            if (world.getBlockState(c1.add(-1, 0, pz)).getBlock() == Waypoints.blockWaypoint) return false;
+            if (world.getBlockState(c1.add(size.getX(), 0, pz)).getBlock() == Waypoints.blockWaypoint) return false;
+        }
         return true;
     }
 
     @Override
     public void breakBlock(World world, BlockPos pos, IBlockState oldBlock) {
         super.breakBlock(world, pos, oldBlock);
-        BlockPos corner = getCorner(world, pos);
-        int size = checkSize(world, pos, 1);
-
-        Waypoint wp = null;
-        if (isValidWaypoint(world, pos))
-            wp = Waypoint.getWaypoint(pos, world.provider.getDimensionId());
-
-        for (int px = 0; px < size; px++)
-            for (int pz = 0; pz < size; pz++)
-                if (!corner.add(px, 0, pz).equals(pos))
-                    world.setBlockState(corner.add(px, 0, pz), Waypoints.blockWaypoint.getStateFromMeta(0), 3);
-
-        if (wp == null) return;
-        Waypoint.removeWaypoint(wp);
+        BlockPos c1a = pos, c1b = pos, c2a = pos, c2b = pos, c1, c2;
+        int x = -1, z = -1;
+        while (world.getBlockState(c1a.add(x, 0, 0)).getBlock() == Waypoints.blockWaypoint) c1a = c1a.add(x, 0, 0);
+        while (world.getBlockState(c1a.add(0, 0, z)).getBlock() == Waypoints.blockWaypoint) c1a = c1a.add(0, 0, z);
+        while (world.getBlockState(c1b.add(0, 0, z)).getBlock() == Waypoints.blockWaypoint) c1b = c1b.add(0, 0, z);
+        while (world.getBlockState(c1b.add(x, 0, 0)).getBlock() == Waypoints.blockWaypoint) c1b = c1b.add(x, 0, 0);
+        c1 = new BlockPos(Math.min(c1a.getX(), c1b.getX()), c1a.getY(), Math.min(c1a.getZ(), c1b.getZ()));
+        if (!Waypoint.isWaypoint(world, c1)) return;
+        Waypoint wp = Waypoint.getWaypoint(world, c1);
+        if (wp != null) Waypoint.removeWaypoint(wp);
+        x = 1;
+        z = 1;
+        while (world.getBlockState(c2a.add(x, 0, 0)).getBlock() == Waypoints.blockWaypoint) c2a = c2a.add(x, 0, 0);
+        while (world.getBlockState(c2a.add(0, 0, z)).getBlock() == Waypoints.blockWaypoint) c2a = c2a.add(0, 0, z);
+        while (world.getBlockState(c2b.add(0, 0, z)).getBlock() == Waypoints.blockWaypoint) c2b = c2b.add(0, 0, z);
+        while (world.getBlockState(c2b.add(x, 0, 0)).getBlock() == Waypoints.blockWaypoint) c2b = c2b.add(x, 0, 0);
+        c2 = new BlockPos(Math.max(c2a.getX(), c2b.getX()), c2a.getY(), Math.max(c2a.getZ(), c2b.getZ()));
+        BlockPos size = new BlockPos(c2.getX() - c1.getX() + 1, 0, c2.getZ() - c1.getZ() + 1);
+        for (int px = 0; px < size.getX(); px++)
+            for (int pz = 0; pz < size.getZ(); pz++)
+                if (world.getBlockState(c1.add(px, 0, pz)).getBlock() == Waypoints.blockWaypoint)
+                    world.setBlockState(c1.add(px, 0, pz), Waypoints.blockWaypoint.getStateFromMeta(0), 3);
     }
 
     @Override
     public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumFacing side, float hitX, float hitY, float hitZ) {
         if (world.isRemote) return true;
-        BlockPos corner = getCorner(world, pos);
-        boolean isOP = MinecraftServer.getServer().getConfigurationManager().canSendCommands(player.getGameProfile());
-        if (Waypoints.allowActivation || isOP) activateStructure(world, corner);
-
-        if (!isValidWaypoint(world, corner)) return true;
-
-        Waypoint src = null;
-        if (isValidWaypoint(world, pos))
-            src = Waypoint.getWaypoint(corner, player.dimension);
+        if (!isValid(world, pos)) return true;
+        if (!isEntityOnWaypoint(world, pos, player)) return true;
+        if (!Waypoints.allowActivation && !isOP(player) && !Waypoint.isWaypoint(world, getCorner(world, pos)))
+            return true;
+        Waypoint src = Waypoint.getOrMakeWaypoint(world, getCorner(world, pos));
         if (src == null) return true;
-
-        if (!isEntityOnWaypoint(world, corner, player)) return true;
         if (src.name.isEmpty()) {
+            activateStructure(world, pos);
             MsgNameWaypoint msg = new MsgNameWaypoint(src, "Waypoint #" + src.id);
             PacketDispatcher.sendTo(msg, (EntityPlayerMP) player);
-
-        } else if (player.isSneaking() && (Waypoints.allowActivation || isOP)) {
-            //Add waypoints
+        } else {
             ArrayList<Waypoint> waypoints = new ArrayList<Waypoint>();
             WaypointPlayerInfo info = WaypointPlayerInfo.get(player.getUniqueID().toString());
             if (info == null) return false;
@@ -140,42 +149,49 @@ public class BlockWaypoint extends Block {
                 if (info.discoveredWaypoints.containsKey(w.id))
                     waypoints.add(w);
 
-            MsgEditWaypoint msg = new MsgEditWaypoint(src.id, src.name, src.linked_id, waypoints);
-            PacketDispatcher.sendTo(msg, (EntityPlayerMP) player);
-        } else {
-            try {
-                Packets.sendWaypointsToPlayer((EntityPlayerMP) player, src.id);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            EntityPlayerMP playerMP = (EntityPlayerMP) player;
+            if (player.isSneaking() && (Waypoints.allowActivation || isOP(player)))
+                PacketDispatcher.sendTo(new MsgEditWaypoint(src.id, src.name, src.linked_id, waypoints), playerMP);
+            else
+                PacketDispatcher.sendTo(new MsgWaypointsList(src.id, waypoints), playerMP);
         }
         return true;
     }
 
     public void activateStructure(World world, BlockPos pos) {
+        if (!isValid(world, pos)) return;
+        BlockPos size = checkSize(world, pos);
         BlockPos corner = getCorner(world, pos);
-        if (checkSize(world, corner, 0) == 3)
-            for (int i = 1, z = 0; z < 3; z++)
-                for (int x = 0; x < 3; x++, i++)
-                    world.setBlockState(corner.add(x, 0, z), Waypoints.blockWaypoint.getStateFromMeta(i), 3);
-
-        if (checkSize(world, corner, 0) == 2)
-            for (int i = 1, z = 0; z < 2; z++, i += 2)
-                for (int x = 0; x < 2; x++, i += 2)
-                    world.setBlockState(corner.add(x, 0, z), Waypoints.blockWaypoint.getStateFromMeta(i), 3);
+        // Set all middle block meta to 5
+        for (int pz = 1; pz < size.getZ() - 1; pz++)
+            for (int px = 1; px < size.getX() - 1; px++)
+                world.setBlockState(corner.add(px, 0, pz), Waypoints.blockWaypoint.getStateFromMeta(5), 3);
+        // Set close edge as 1, 2, 2, ...,  2, 2, 3
+        // Set away edge as 7, 8, 8, ...,  8, 8, 9
+        world.setBlockState(corner.add(0, 0, 0), Waypoints.blockWaypoint.getStateFromMeta(1), 3); //close
+        world.setBlockState(corner.add(size.getX() - 1, 0, 0), Waypoints.blockWaypoint.getStateFromMeta(3), 3); //close
+        world.setBlockState(corner.add(0, 0, size.getZ() - 1), Waypoints.blockWaypoint.getStateFromMeta(7), 3); //away
+        world.setBlockState(corner.add(size.getX() - 1, 0, size.getZ() - 1), Waypoints.blockWaypoint.getStateFromMeta(9), 3); //away
+        for (int px = 1; px < size.getX() - 1; px++) {
+            world.setBlockState(corner.add(px, 0, 0), Waypoints.blockWaypoint.getStateFromMeta(2), 3); //close
+            world.setBlockState(corner.add(px, 0, size.getZ() - 1), Waypoints.blockWaypoint.getStateFromMeta(8), 3); //away
+        }
+        // Set unset left edge to 4
+        // Set unset right edge to 6
+        for (int pz = 1; pz < size.getZ() - 1; pz++) {
+            world.setBlockState(corner.add(0, 0, pz), Waypoints.blockWaypoint.getStateFromMeta(4), 3);
+            world.setBlockState(corner.add(size.getX() - 1, 0, pz), Waypoints.blockWaypoint.getStateFromMeta(6), 3);
+        }
     }
 
     @Override
     public void randomDisplayTick(World world, BlockPos pos, IBlockState state, Random rand) {
-        BlockWaypoint blockWaypoint = (BlockWaypoint) state.getBlock();
-        if (!blockWaypoint.isValidWaypoint(world, pos)) return;
-
         float fx = (float) pos.getX() + 0.5F;
         float fy = (float) pos.getY() + 1.0F + rand.nextFloat() * 6.0F / 16.0F;
         float fz = (float) pos.getZ() + 0.5F;
         BlockPos corner = getCorner(world, pos);
-        Waypoint src = Waypoint.getWaypoint(corner, world.provider.getDimensionId());
-        if (src.powered) {
+        Waypoint src = Waypoint.getWaypoint(world, corner);
+        if (src != null && src.powered) {
             Waypoint w = Waypoint.getWaypoint(src.linked_id - 1);
             if (w == null) return;
             world.spawnParticle(EnumParticleTypes.PORTAL, (double) fx + rand.nextFloat() % 1 - 0.5, (double) fy, (double) fz + rand.nextFloat() % 1 - 0.5, 0.0D, 0.0D, 0.0D);
@@ -185,10 +201,9 @@ public class BlockWaypoint extends Block {
 
     public boolean isPowered(World world, BlockPos pos) {
         BlockPos corner = getCorner(world, pos);
-
-        int size = checkSize(world, corner, 0);
-        for (int xp = 0; xp < size; xp++) {
-            for (int zp = 0; zp < size; zp++) {
+        BlockPos size = checkSize(world, corner);
+        for (int xp = 0; xp < size.getX(); xp++) {
+            for (int zp = 0; zp < size.getZ(); zp++) {
                 if (world.isBlockIndirectlyGettingPowered(corner.add(xp, 0, zp)) > 0) return true;
             }
         }
@@ -196,25 +211,14 @@ public class BlockWaypoint extends Block {
     }
 
     public void onEntityCollidedWithBlock(World world, BlockPos pos, Entity entity) {
-        BlockPos corner = getCorner(world, pos);
-        Random rand = new Random();
         if (!world.isRemote) {
-            Waypoint src = null;
-            if (isValidWaypoint(world, pos))
-                src = Waypoint.getWaypoint(corner, entity.dimension);
-            else
-                return;
-            if (BlockWaypoint.isEntityOnWaypoint(world, corner, entity)) {
+            Waypoint src = Waypoint.getWaypoint(world, getCorner(world, pos));
+            if (src == null) return;
+            if (BlockWaypoint.isEntityOnWaypoint(world, pos, entity)) {
                 Waypoint w = Waypoint.getWaypoint(src.linked_id - 1);
                 if (w == null) return;
-                ByteBuf buffer1 = Unpooled.buffer();
-                buffer1.writeInt(3);
-                buffer1.writeDouble(entity.posX);
-                buffer1.writeDouble(entity.posY);
-                buffer1.writeDouble(entity.posZ);
-                FMLProxyPacket packet1 = new FMLProxyPacket(new PacketBuffer(buffer1.copy()), "Waypoints");
 
-                int size = BlockWaypoint.checkSize(entity.worldObj, w.pos, 0);
+                BlockPos size = BlockWaypoint.checkSize(entity.worldObj, w.pos);
                 boolean teleported = false;
                 if (entity instanceof EntityPlayer || entity instanceof EntityLiving) {
                     if (entity.timeUntilPortal > 0 && entity.timeUntilPortal <= entity.getPortalCooldown()) {
@@ -231,23 +235,22 @@ public class BlockWaypoint extends Block {
                 }
                 if (teleported) {
                     MsgRedDust msg1 = new MsgRedDust(src.dimension, entity.posX, entity.posY, entity.posZ);
-                    MsgRedDust msg2 = new MsgRedDust(w.dimension, w.pos.getX() + size / 2.0, w.pos.getY() + 0.5, w.pos.getZ() + size / 2.0);
+                    MsgRedDust msg2 = new MsgRedDust(w.dimension, w.pos.getX() + size.getX() / 2.0, w.pos.getY() + 0.5, w.pos.getZ() + size.getZ() / 2.0);
                     PacketDispatcher.sendToAllAround(msg1, new NetworkRegistry.TargetPoint(src.dimension, entity.posX, entity.posY, entity.posZ, 25));
-                    PacketDispatcher.sendToAllAround(msg2, new NetworkRegistry.TargetPoint(w.dimension, w.pos.getX() + size / 2.0, w.pos.getY(), w.pos.getZ() + size / 2.0, 25));
+                    PacketDispatcher.sendToAllAround(msg2, new NetworkRegistry.TargetPoint(w.dimension, w.pos.getX() + size.getX() / 2.0, w.pos.getY(), w.pos.getZ() + size.getZ() / 2.0, 25));
                 }
             }
         }
     }
 
     public void onNeighborBlockChange(World world, BlockPos pos, IBlockState state, Block block) {
-        if (!isValidWaypoint(world, pos)) return;
+        Waypoint waypoint = Waypoint.getWaypoint(world, getCorner(world, pos));
+        if (waypoint == null) return;
         BlockPos corner = getCorner(world, pos);
         if (isPowered(world, corner)) {
-            Waypoint waypoint = Waypoint.getWaypoint(corner, world.provider.getDimensionId());
             waypoint.powered = true;
             waypoint.changed = true;
         } else {
-            Waypoint waypoint = Waypoint.getWaypoint(corner, world.provider.getDimensionId());
             waypoint.powered = false;
             waypoint.changed = true;
         }

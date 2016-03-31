@@ -5,6 +5,7 @@ import info.jbcs.minecraft.waypoints.block.BlockWaypoint;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.network.PacketBuffer;
+import net.minecraft.util.BlockPos;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 
@@ -45,11 +46,11 @@ public class MsgTeleport extends AbstractMessage.AbstractServerMessage<MsgTelepo
         MsgRedDust msg1 = new MsgRedDust(player.dimension, player.posX, player.posY, player.posZ);
 
         if (player.dimension != dest.dimension) player.travelToDimension(dest.dimension);
-        int size = BlockWaypoint.checkSize(player.worldObj, dest.pos, 0);
-        player.setLocationAndAngles(dest.pos.getX() + size / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size / 2.0, player.rotationYaw, 0);
-        player.setPositionAndUpdate(dest.pos.getX() + size / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size / 2.0);
+        BlockPos size = BlockWaypoint.checkSize(player.worldObj, dest.pos);
+        player.setLocationAndAngles(dest.pos.getX() + size.getX() / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size.getZ() / 2.0, player.rotationYaw, 0);
+        player.setPositionAndUpdate(dest.pos.getX() + size.getX() / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size.getZ() / 2.0);
 
-        MsgRedDust msg2 = new MsgRedDust(dest.dimension, dest.pos.getX() + size / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size / 2.0);
+        MsgRedDust msg2 = new MsgRedDust(dest.dimension, dest.pos.getX() + size.getX() / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size.getZ() / 2.0);
         PacketDispatcher.sendToAllAround(msg1, new NetworkRegistry.TargetPoint(msg1.getDimension(), msg1.getX(), msg1.getY(), msg1.getZ(), 25));
         PacketDispatcher.sendToAllAround(msg2, new NetworkRegistry.TargetPoint(msg2.getDimension(), msg2.getX(), msg2.getY(), msg2.getZ(), 25));
 

@@ -7,7 +7,6 @@ import info.jbcs.minecraft.waypoints.proxy.Proxy;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
-import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.ISaveHandler;
@@ -31,17 +30,16 @@ public class Waypoints {
     public static final String MODNAME = "Waypoints";
     public static final String VERSION = "1.8.9-1.1.1";
     public static boolean compactView;
-    public static String default_recipe = "3x2,minecraft:stone:1,minecraft:stone:1,minecraft:stone:1,minecraft:stone:1,minecraft:ender_pearl:1,minecraft:stone:1";
-    public static String recipe;
     public static boolean craftable;
     public static boolean allowActivation;
-    public static GuiHandler guiEditWaypointh;
-    public static int maxSize = 3;
+    public static boolean playSounds;
+    public static int maxSize;
+    public static int minSize;
+    public static boolean allowNotSquare;
     public static BlockWaypoint blockWaypoint;
     @Mod.Instance("Waypoints")
     public static Waypoints instance;
     public static CreativeTabs tabWaypoints;
-    public static ItemBlock itemWaypoint;
     @SidedProxy(clientSide = "info.jbcs.minecraft.waypoints.proxy.ProxyClient", serverSide = "info.jbcs.minecraft.waypoints.proxy.Proxy")
     public static Proxy proxy;
     static Configuration config;
@@ -60,19 +58,20 @@ public class Waypoints {
 
     @EventHandler
     public void init(FMLInitializationEvent event) {
-
-
         tabWaypoints = CreativeTabs.tabDecorations;
 
         blockWaypoint = new BlockWaypoint();
         GameRegistry.registerBlock(blockWaypoint, ItemWaypoint.class, "waypoint");
         proxy.init();
         compactView = config.get("general", "compact view", true, "Only show one line in Waypoint GUI, in order to fit more waypoints on the screen").getBoolean();
-        //recipe = config.get("general", "recipe", default_recipe, "You can change crafting recipe here").getString();
         craftable = config.get("general", "craftable", true, "Set to false to completely disable crafting recipe").getBoolean();
         if (craftable)
             addRecipe(new ItemStack(blockWaypoint, 1), "SSS", "SES", 'S', Blocks.stone, 'E', Items.ender_pearl);
         allowActivation = config.get("general", "can_no_ops_activate", true, "If set to false only ops can enable Waypoins").getBoolean();
+        playSounds = config.get("general", "play sounds", true, "Set to false to disable teleportation sounds").getBoolean();
+        maxSize = config.get("general", "max size", 3, "Set maximum size of waypoints (default 3)").getInt();
+        minSize = config.get("general", "min size", 2, "Set minimum size of waypoints (default 2)").getInt();
+        allowNotSquare = config.get("general", "allow not square", false, "Set to true to allow not square (rectangular) waypoints").getBoolean();
         MinecraftForge.EVENT_BUS.register(this);
         config.save();
         proxy.registerPackets();
@@ -93,7 +92,6 @@ public class Waypoints {
     public void onServerStop(FMLServerStoppingEvent evt) {
         File file = loadedWorldDir;
         if (file == null) return;
-
         try {
             Waypoint.write(new File(file, "waypoints.dat"));
             WaypointPlayerInfo.writeAll();
@@ -106,14 +104,8 @@ public class Waypoints {
 
     @EventHandler
     public void onLoadingWorld(FMLServerStartingEvent evt) {
-        Waypoint.existingWaypoints.clear();
-        Waypoint.waypointsLocationMap.clear();
-        Waypoint.nextId = 0;
-        Waypoint.waypoints = new Waypoint[0x400];
-        Waypoint.changed = false;
-
-        WaypointPlayerInfo.location = null;
-        WaypointPlayerInfo.objects.clear();
+        Waypoint.clear();
+        WaypointPlayerInfo.clear();
 
         File file = getWorldDir(evt.getServer().getEntityWorld());
         if (file == null) return;

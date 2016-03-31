@@ -68,7 +68,6 @@ public class WaypointPlayerInfo {
 
     private void read(File file) throws IOException {
         changed = false;
-        objects.clear();
         discoveredWaypoints.clear();
 
         byte[] bytes = Files.readAllBytes(file.toPath());
@@ -100,5 +99,10 @@ public class WaypointPlayerInfo {
         Files.write(file.toPath(), bytes);
 
         changed = false;
+    }
+
+    public static void clear() {
+        WaypointPlayerInfo.location = null;
+        WaypointPlayerInfo.objects.clear();
     }
 }
