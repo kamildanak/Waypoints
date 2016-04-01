@@ -4,10 +4,14 @@ import info.jbcs.minecraft.waypoints.Waypoints;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public class ItemWaypoint extends ItemBlock {
@@ -19,23 +23,25 @@ public class ItemWaypoint extends ItemBlock {
     }
 
     @Override
-    public boolean onItemUse(ItemStack stack, EntityPlayer player, World world, BlockPos pos, EnumFacing side, float hx, float hy, float hz) {
+    public EnumActionResult onItemUse(ItemStack stack, EntityPlayer player, World world, BlockPos pos, EnumHand hand, EnumFacing side, float hx, float hy, float hz) {
         int x = pos.getX(), y = pos.getY(), z = pos.getZ();
         Block block = world.getBlockState(pos).getBlock();
 
         if (!block.isReplaceable(world, pos)) pos = pos.add(side.getDirectionVec());
-        if (stack.stackSize == 0) return false;
-        if (!player.canPlayerEdit(pos, side, stack)) return false;
+        if (stack.stackSize == 0) return EnumActionResult.SUCCESS;
+        if (!player.canPlayerEdit(pos, side, stack)) return EnumActionResult.SUCCESS;
 
         int north = countWaypointBlocks(world, pos, 0, 0, 1, Waypoints.maxSize - 1);
         int south = countWaypointBlocks(world, pos, 0, 0, -1, Waypoints.maxSize - 1);
         int east = countWaypointBlocks(world, pos, 1, 0, 0, Waypoints.maxSize - 1);
         int west = countWaypointBlocks(world, pos, -1, 0, 0, Waypoints.maxSize - 1);
 
-        if (north == -1 || south == -1 || east == -1 || west == -1) return false;
-        if (north + south + 1 > Waypoints.maxSize || east + west + 1 > Waypoints.maxSize) return false;
+        if (north == -1 || south == -1 || east == -1 || west == -1) return EnumActionResult.SUCCESS;
+        if (north + south + 1 > Waypoints.maxSize || east + west + 1 > Waypoints.maxSize)
+            return EnumActionResult.SUCCESS;
         if (isActivated(world, pos.add(1, 0, 0)) || isActivated(world, pos.add(-1, 0, 0)) ||
-                isActivated(world, pos.add(0, 0, 1)) || isActivated(world, pos.add(0, 0, -1))) return false;
+                isActivated(world, pos.add(0, 0, 1)) || isActivated(world, pos.add(0, 0, -1)))
+            return EnumActionResult.SUCCESS;
 
         int oldMeta = this.getMetadata(stack.getItemDamage());
         IBlockState meta = blockWaypoint.onBlockPlaced(world, pos, side, hx, hy, hz, oldMeta, player);
@@ -46,11 +52,12 @@ public class ItemWaypoint extends ItemBlock {
         while (world.getBlockState(new BlockPos(ox, y, oz - 1)).getBlock() == blockWaypoint) oz--;
 
         if (placeBlockAt(stack, player, world, pos, side, hx, hy, hz, meta)) {
-            world.playSoundEffect(x + 0.5F, y + 0.5F, z + 0.5F, blockWaypoint.stepSound.getBreakSound(), (blockWaypoint.stepSound.getVolume() + 1.0F) / 2.0F, blockWaypoint.stepSound.getFrequency() * 0.8F);
+            world.playSound(x + 0.5F, y + 0.5F, z + 0.5F, SoundEvents.block_stone_place, SoundCategory.MASTER,
+                    (blockWaypoint.getStepSound().getVolume() + 1.0F) / 2.0F, blockWaypoint.getStepSound().getPitch() * 0.8F, true);
             --stack.stackSize;
         }
 
-        return true;
+        return EnumActionResult.SUCCESS;
     }
 
     int countWaypointBlocks(World world, BlockPos pos, int px, int py, int pz, int maxSize) {

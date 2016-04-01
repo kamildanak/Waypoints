@@ -1,3 +1,14 @@
 {
-  "teleport": {"category": "master", "sounds": [{"name": "teleport","stream": false}]}
+  "waypoints.sound.teleport": {
+    "category": "master music",
+    "replace": false,
+    "sounds": [
+      {
+        "name": "sound_processed",
+        "type": "event",
+        "volume": 1,
+        "pitch": 1
+      },
+      "waypoints:teleport" ]
+  }
 }

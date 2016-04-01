@@ -3,7 +3,7 @@ package info.jbcs.minecraft.waypoints;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.BlockPos;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 
@@ -62,7 +62,7 @@ public class Waypoint {
     }
 
     public static boolean isWaypoint(World world, BlockPos pos) {
-        return isWaypoint(pos, world.provider.getDimensionId());
+        return isWaypoint(pos, world.provider.getDimension());
     }
 
     private static boolean isWaypoint(BlockPos pos, int dimension) {
@@ -71,12 +71,12 @@ public class Waypoint {
     }
 
     public static Waypoint getOrMakeWaypoint(World world, BlockPos pos) {
-        return getWaypoint(pos, world.provider.getDimensionId());
+        return getWaypoint(pos, world.provider.getDimension());
     }
 
     public static Waypoint getWaypoint(World world, BlockPos pos) {
         if (!isWaypoint(world, pos)) return null;
-        return getWaypoint(pos, world.provider.getDimensionId());
+        return getWaypoint(pos, world.provider.getDimension());
     }
 
     private static Waypoint getWaypoint(BlockPos pos, int dimension) {

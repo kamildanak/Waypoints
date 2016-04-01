@@ -31,7 +31,7 @@ public class GuiWaypointButton extends GuiExButton {
             String dimName = "" + waypoint.dimension;
 
             try {
-                dimName = DimensionManager.getProvider(waypoint.dimension).getDimensionName();
+                dimName = DimensionManager.getProvider(waypoint.dimension).getDimensionType().getName();
             } catch (Throwable e) {
             }
 

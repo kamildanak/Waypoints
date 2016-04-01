@@ -4,17 +4,20 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.audio.SoundHandler;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.init.SoundEvents;
 
 public class GuiExButton extends GuiElement {
+    protected String caption;
+
+    int u, v, texw, texh;
+    int borderTop, borderRight, borderBottom, borderLeft;
+
+    boolean over;
     public boolean disabled;
+
     public TexturedBox boxDisabled;
     public TexturedBox boxNormal;
     public TexturedBox boxOver;
-    protected String caption;
-    int u, v, texw, texh;
-    int borderTop, borderRight, borderBottom, borderLeft;
-    boolean over;
 
     public GuiExButton(int x, int y, int w, int h, String caption) {
         this(x, y, w, h, caption, "textures/gui/widgets.png");
@@ -71,7 +74,7 @@ public class GuiExButton extends GuiElement {
         }
         Minecraft mc = Minecraft.getMinecraft();
         SoundHandler soundHandler = new SoundHandler(mc.getResourceManager(), mc.gameSettings);
-        soundHandler.playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0F));
+        soundHandler.playSound(PositionedSoundRecord.getMasterRecord(SoundEvents.ui_button_click, 1.0F));
         onClick();
     }
 }

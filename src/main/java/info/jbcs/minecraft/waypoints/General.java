@@ -1,10 +1,10 @@
 package info.jbcs.minecraft.waypoints;
 
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.server.MinecraftServer;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 
 public class General {
     public static boolean isOP(EntityPlayer player) {
-        return MinecraftServer.getServer().getConfigurationManager().canSendCommands(player.getGameProfile());
+        return FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().canSendCommands(player.getGameProfile());
     }
 }

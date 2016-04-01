@@ -4,13 +4,13 @@ import info.jbcs.minecraft.waypoints.Waypoint;
 import info.jbcs.minecraft.waypoints.WaypointTeleporter;
 import info.jbcs.minecraft.waypoints.Waypoints;
 import info.jbcs.minecraft.waypoints.block.BlockWaypoint;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.potion.PotionEffect;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.BlockPos;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 
@@ -47,13 +47,13 @@ public class MsgTeleport extends AbstractMessage.AbstractServerMessage<MsgTelepo
         if (src == null || dest == null) return;
 
         if (!BlockWaypoint.isEntityOnWaypoint(player.worldObj, src.pos, player)) return;
-        player.mountEntity((Entity) null);
+        player.dismountRidingEntity();
 
         MsgRedDust msg1 = new MsgRedDust(player.dimension, player.posX, player.posY, player.posZ);
 
         if (player.dimension != dest.dimension)
-            MinecraftServer.getServer().getConfigurationManager().transferPlayerToDimension((EntityPlayerMP) player, dest.dimension,
-                    new WaypointTeleporter(MinecraftServer.getServer().worldServerForDimension(dest.dimension)));
+            player.worldObj.getMinecraftServer().getPlayerList().transferPlayerToDimension((EntityPlayerMP) player, dest.dimension,
+                    new WaypointTeleporter(FMLCommonHandler.instance().getMinecraftServerInstance().worldServerForDimension(dest.dimension)));
         BlockPos size = BlockWaypoint.checkSize(player.worldObj, dest.pos);
         player.setLocationAndAngles(dest.pos.getX() + size.getX() / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size.getZ() / 2.0, player.rotationYaw, 0);
         player.setPositionAndUpdate(dest.pos.getX() + size.getX() / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size.getZ() / 2.0);
@@ -70,10 +70,9 @@ public class MsgTeleport extends AbstractMessage.AbstractServerMessage<MsgTelepo
             }
         }
 
-        String sound = Waypoints.playSoundEnderman ? "mob.endermen.portal":"waypoints:teleport";
         if(Waypoints.playSounds) {
-            player.worldObj.playSoundEffect(player.posX, player.posY, player.posZ, sound, 1.0f, 1.0f);
-            player.worldObj.playSoundEffect(dest.pos.getX() + size.getX() / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size.getZ() / 2.0, sound, 1.0f, 1.0f);
+            player.worldObj.playSound(player.posX, player.posY, player.posZ, Waypoints.soundEvent, SoundCategory.MASTER, 1.0f, 1.0f, true);
+            player.worldObj.playSound(dest.pos.getX() + size.getX() / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size.getZ() / 2.0, Waypoints.soundEvent, SoundCategory.MASTER, 1.0f, 1.0f, true);
         }
     }
 

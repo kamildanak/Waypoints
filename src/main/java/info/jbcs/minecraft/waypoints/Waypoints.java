@@ -7,8 +7,12 @@ import info.jbcs.minecraft.waypoints.proxy.Proxy;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
+import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundEvent;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.ISaveHandler;
 import net.minecraft.world.storage.SaveHandler;
@@ -23,13 +27,14 @@ import net.minecraftforge.fml.common.registry.GameRegistry;
 import java.io.File;
 import java.io.IOException;
 
+import static net.minecraft.util.SoundEvent.soundEventRegistry;
 import static net.minecraftforge.fml.common.registry.GameRegistry.addRecipe;
 
 @Mod(modid = Waypoints.MODID, name = Waypoints.MODNAME, version = Waypoints.VERSION)
 public class Waypoints {
     public static final String MODID = "Waypoints";
     public static final String MODNAME = "Waypoints";
-    public static final String VERSION = "1.8.9-1.2.0";
+    public static final String VERSION = "1.9-1.2.0";
     public static boolean compactView;
     public static boolean craftable;
     public static boolean allowActivation;
@@ -50,6 +55,7 @@ public class Waypoints {
     public static PotionEffect potionEffects[];
     public static int potionEffectsChances[];
     public static int teleportationExhaustion;
+    public static SoundEvent soundEvent;
 
     public Waypoints() {
     }
@@ -86,7 +92,15 @@ public class Waypoints {
         potionEffectsChances = config.get("general", "effects chances", new int[]{30, 10, 5}, "List of probabilities (0-100)% that effect will appear").getIntList();
         potionEffects = new PotionEffect[Math.min(effects.length, effectsDurations.length)];
         for (int i = 0; i < potionEffects.length; i++)
-            potionEffects[i] = new PotionEffect(effects[i], effectsDurations[i] * 10);
+            potionEffects[i] = new PotionEffect(Potion.getPotionById(effects[i]), effectsDurations[i] * 10);
+        if (playSoundEnderman)
+            soundEvent = SoundEvents.entity_endermen_teleport;
+        else {
+            int soundEventId = soundEventRegistry.getKeys().size();
+            ResourceLocation resourcelocation = new ResourceLocation(MODID, "waypoints.sound.teleport");
+            soundEventRegistry.register(soundEventId++, resourcelocation, new SoundEvent(resourcelocation));
+            soundEvent = (SoundEvent) soundEventRegistry.getObject(resourcelocation);
+        }
         //
         MinecraftForge.EVENT_BUS.register(this);
         config.save();

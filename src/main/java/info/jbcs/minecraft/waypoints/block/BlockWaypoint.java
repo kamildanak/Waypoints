@@ -6,10 +6,11 @@ import info.jbcs.minecraft.waypoints.WaypointTeleporter;
 import info.jbcs.minecraft.waypoints.Waypoints;
 import info.jbcs.minecraft.waypoints.network.*;
 import net.minecraft.block.Block;
+import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyEnum;
-import net.minecraft.block.state.BlockState;
+import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
@@ -20,10 +21,10 @@ import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.BlockPos;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumParticleTypes;
-import net.minecraft.util.IStringSerializable;
+import net.minecraft.util.*;
+import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 
@@ -41,12 +42,22 @@ public class BlockWaypoint extends Block {
         super(Material.rock);
         setUnlocalizedName("waypoint");
         this.setCreativeTab(CreativeTabs.tabTransport);
-        setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.5F, 1.0F);
         setLightOpacity(255);
         this.setLightOpacity(0);
 
-        this.setResistance(10F).setStepSound(Blocks.stone.stepSound).setHardness(2.0F);
+        this.setResistance(10F).setHardness(2.0F);
         this.setDefaultState(this.blockState.getBaseState().withProperty(TYPE, EnumType.BASE));
+        this.fullBlock = false;
+    }
+
+    @Override
+    public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos) {
+        return new AxisAlignedBB(0.0F, 0.0F, 0.0F, 1.0F, 0.5F, 1.0F);
+    }
+
+    @Override
+    public SoundType getStepSound() {
+        return Blocks.stone.getStepSound();
     }
 
     /* Function returns corner that is saved to Waypoints database */
@@ -127,7 +138,7 @@ public class BlockWaypoint extends Block {
     }
 
     @Override
-    public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumFacing side, float hitX, float hitY, float hitZ) {
+    public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand, ItemStack heldItem, EnumFacing side, float hitX, float hitY, float hitZ) {
         if (world.isRemote) return true;
         if (!isValid(world, pos)) return true;
         if (!isEntityOnWaypoint(world, pos, player)) return true;
@@ -185,7 +196,7 @@ public class BlockWaypoint extends Block {
     }
 
     @Override
-    public void randomDisplayTick(World world, BlockPos pos, IBlockState state, Random rand) {
+    public void randomDisplayTick(IBlockState blockState, World world, BlockPos pos, Random rand) {
         float fx = (float) pos.getX() + 0.5F;
         float fy = (float) pos.getY() + 1.0F + rand.nextFloat() * 6.0F / 16.0F;
         float fz = (float) pos.getZ() + 0.5F;
@@ -210,6 +221,7 @@ public class BlockWaypoint extends Block {
         return false;
     }
 
+    @Override
     public void onEntityCollidedWithBlock(World world, BlockPos pos, Entity entity) {
         if (!world.isRemote) {
             Waypoint src = Waypoint.getWaypoint(world, getCorner(world, pos));
@@ -224,9 +236,9 @@ public class BlockWaypoint extends Block {
                     if (entity.timeUntilPortal > 0 && entity.timeUntilPortal <= entity.getPortalCooldown()) {
                         entity.timeUntilPortal = entity.getPortalCooldown();
                     } else if (entity.timeUntilPortal > entity.getPortalCooldown() && entity.timeUntilPortal < 2 * entity.getPortalCooldown()) {
-                        MinecraftServer minecraftServer = MinecraftServer.getServer();
+                        MinecraftServer minecraftServer = world.getMinecraftServer();
                         entity.timeUntilPortal = entity.getPortalCooldown();
-                        teleported = new WaypointTeleporter(minecraftServer.worldServerForDimension(world.provider.getDimensionId())).teleport(entity, world, w);
+                        teleported = new WaypointTeleporter(minecraftServer.worldServerForDimension(world.provider.getDimension())).teleport(entity, world, w);
                     } else if (src.powered && entity instanceof EntityPlayer && entity.timeUntilPortal == 0) {
                         entity.timeUntilPortal = 2 * entity.getPortalCooldown() + 20;
                     } else if (src.powered && entity.timeUntilPortal == 0) {
@@ -235,9 +247,7 @@ public class BlockWaypoint extends Block {
                 }
                 if (teleported) {
                     if(Waypoints.playSounds){
-                        String sound = Waypoints.playSoundEnderman ? "mob.endermen.portal":"waypoints:teleport";
-                        world.playSoundEffect(entity.posX, entity.posY, entity.posZ, sound, 1.0f, 1.0f);
-                        world.playSoundEffect(w.pos.getX() + size.getX() / 2.0, w.pos.getY() + 0.5, w.pos.getZ() + size.getZ() / 2.0, sound, 1.0f, 1.0f);
+                        world.playSound(entity.posX, entity.posY, entity.posZ, Waypoints.soundEvent, SoundCategory.MASTER, 1.0f, 1.0f, true);
                     }
                     MsgRedDust msg1 = new MsgRedDust(src.dimension, entity.posX, entity.posY, entity.posZ);
                     MsgRedDust msg2 = new MsgRedDust(w.dimension, w.pos.getX() + size.getX() / 2.0, w.pos.getY() + 0.5, w.pos.getZ() + size.getZ() / 2.0);
@@ -262,17 +272,22 @@ public class BlockWaypoint extends Block {
     }
 
     @Override
-    public boolean isOpaqueCube() {
+    public boolean isFullBlock(IBlockState state) {
         return false;
     }
 
     @Override
-    public boolean isFullCube() {
+    public boolean isFullCube(IBlockState state) {
         return false;
     }
 
     @Override
-    public boolean isNormalCube() {
+    public boolean isNormalCube(IBlockState state) {
+        return false;
+    }
+
+    @Override
+    public boolean isOpaqueCube(IBlockState state) {
         return false;
     }
 
@@ -282,8 +297,8 @@ public class BlockWaypoint extends Block {
     }
 
     @Override
-    protected BlockState createBlockState() {
-        return new BlockState(this, new IProperty[]{TYPE});
+    protected BlockStateContainer createBlockState() {
+        return new BlockStateContainer(this, new IProperty[]{TYPE});
     }
 
     public int getMetaFromState(IBlockState state) {

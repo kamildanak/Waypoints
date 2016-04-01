@@ -4,7 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.VertexBuffer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import org.lwjgl.opengl.GL11;
 
@@ -20,7 +20,7 @@ public class GuilScrolledBox extends GuiElement {
 
     protected void overlayBackground(int start, int end, int color, int a1, int a2) {
         Tessellator tessellator = Tessellator.getInstance();
-        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+        VertexBuffer vertexBuffer = tessellator.getBuffer();
 
         float a = 225;
         float r = (float) (color >> 16 & 255) / 255.0F;
@@ -31,12 +31,12 @@ public class GuilScrolledBox extends GuiElement {
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         float f = 32.0F;
 
-        worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
+        vertexBuffer.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
 
-        worldrenderer.pos(x0, end, 0.0D).tex(0.0D, end / f).color(r, g, b, a).endVertex();
-        worldrenderer.pos(x1, end, 0.0D).tex(gui.width / f, end / f).color(r, g, b, a).endVertex();
-        worldrenderer.pos(x1, start, 0.0D).tex(gui.width / f, start / f).color(r, g, b, a).endVertex();
-        worldrenderer.pos(x0, start, 0.0D).tex(0.0D, start / f).color(r, g, b, a).endVertex();
+        vertexBuffer.pos(x0, end, 0.0D).tex(0.0D, end / f).color(r, g, b, a).endVertex();
+        vertexBuffer.pos(x1, end, 0.0D).tex(gui.width / f, end / f).color(r, g, b, a).endVertex();
+        vertexBuffer.pos(x1, start, 0.0D).tex(gui.width / f, start / f).color(r, g, b, a).endVertex();
+        vertexBuffer.pos(x0, start, 0.0D).tex(0.0D, start / f).color(r, g, b, a).endVertex();
 
         tessellator.draw();
     }

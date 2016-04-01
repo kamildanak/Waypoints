@@ -5,11 +5,12 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.BlockPos;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Teleporter;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProvider;
 import net.minecraft.world.WorldServer;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 
 public class WaypointTeleporter extends Teleporter {
 
@@ -23,11 +24,11 @@ public class WaypointTeleporter extends Teleporter {
     // Move the Entity to the portal
     public boolean teleport(Entity entity, World world, Waypoint w) {
         int dim = w.dimension;
-        MinecraftServer mcServer = MinecraftServer.getServer();
+        MinecraftServer mcServer = world.getMinecraftServer();
         if (entity instanceof EntityPlayerMP) {
             EntityPlayerMP thePlayer = (EntityPlayerMP) entity;
             if (thePlayer.dimension != dim) {
-                mcServer.getConfigurationManager().transferPlayerToDimension(thePlayer, dim, new WaypointTeleporter(mcServer.worldServerForDimension(dim)));
+                mcServer.getPlayerList().transferPlayerToDimension(thePlayer, dim, new WaypointTeleporter(mcServer.worldServerForDimension(dim)));
             }
             BlockPos size = BlockWaypoint.checkSize(thePlayer.worldObj, w.pos);
             double x = w.pos.getX() + size.getX() / 2.0;
@@ -57,7 +58,7 @@ public class WaypointTeleporter extends Teleporter {
 
     public void travelToDimension(EntityLiving entityIn, int dim, Waypoint w) {
         if (!entityIn.worldObj.isRemote && !entityIn.isDead) {
-            MinecraftServer minecraftserver = MinecraftServer.getServer();
+            MinecraftServer minecraftserver = FMLCommonHandler.instance().getMinecraftServerInstance();
             int j = entityIn.dimension;
             WorldServer wsOld = minecraftserver.worldServerForDimension(j);
             WorldServer wsNew = minecraftserver.worldServerForDimension(dim);
