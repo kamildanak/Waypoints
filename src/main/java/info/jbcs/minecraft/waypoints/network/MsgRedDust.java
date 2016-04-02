@@ -1,11 +1,8 @@
 package info.jbcs.minecraft.waypoints.network;
 
-import info.jbcs.minecraft.waypoints.Waypoints;
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.EnumParticleTypes;
-import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 
 import java.io.IOException;
@@ -44,11 +41,10 @@ public class MsgRedDust extends AbstractMessage.AbstractClientMessage<MsgRedDust
 
     @Override
     public void process(EntityPlayer player, Side side) {
-        World world = Minecraft.getMinecraft().theWorld;
         for (int ex = 0; ex < 8; ex++) {
             for (int ey = 0; ey < 8; ey++) {
                 for (int ez = 0; ez < 8; ez++) {
-                    world.spawnParticle(EnumParticleTypes.REDSTONE, this.x - 1 + ex / 4.0, this.y - 1.8 + ey / 4.0,
+                    player.worldObj.spawnParticle(EnumParticleTypes.REDSTONE, this.x - 1 + ex / 4.0, this.y - 1.8 + ey / 4.0,
                             this.z - 1 + ez / 4.0, 110.0D / 250, 25.0D / 250, 130.0D / 250);
                 }
             }
