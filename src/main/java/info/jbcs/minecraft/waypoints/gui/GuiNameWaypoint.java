@@ -1,13 +1,13 @@
 package info.jbcs.minecraft.waypoints.gui;
 
-import info.jbcs.minecraft.waypoints.Waypoint;
 import info.jbcs.minecraft.waypoints.network.MsgName;
 import info.jbcs.minecraft.waypoints.network.PacketDispatcher;
+import net.minecraft.util.BlockPos;
 
 public class GuiNameWaypoint extends GuiScreenPlus {
     GuiEdit nameEdit;
 
-    public GuiNameWaypoint(final Waypoint waypoint, String suggestedName) {
+    public GuiNameWaypoint(final BlockPos pos, final int waypointId, String suggestedName) {
         super(117, 73, "waypoints:textures/gui-name-waypoint.png");
 
         addChild(new GuiLabel(9, 9, "Name waypoint:"));
@@ -17,7 +17,7 @@ public class GuiNameWaypoint extends GuiScreenPlus {
         addChild(new GuiExButton(7, 45, 49, 20, "OK") {
             @Override
             public void onClick() {
-                MsgName msg = new MsgName(waypoint, nameEdit.getText());
+                MsgName msg = new MsgName(pos, waypointId, nameEdit.getText());
                 PacketDispatcher.sendToServer(msg);
                 close();
             }

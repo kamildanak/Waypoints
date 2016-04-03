@@ -18,32 +18,34 @@ import java.io.IOException;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class MsgTeleport extends AbstractMessage.AbstractServerMessage<MsgTeleport> {
-    private static Waypoint src, dest;
+    private static int srcID, destID;
 
     public MsgTeleport() {
     }
 
-    public MsgTeleport(Waypoint src, Waypoint dest) {
-        this.src = src;
-        this.dest = dest;
+    public MsgTeleport(int src, int dest) {
+        this.srcID = src;
+        this.destID = dest;
     }
 
     @Override
     protected void read(PacketBuffer buffer) throws IOException {
-        src = Waypoint.getWaypoint(buffer.readInt());
-        dest = Waypoint.getWaypoint(buffer.readInt());
+        srcID = buffer.readInt();
+        destID = buffer.readInt();
 
     }
 
     @Override
     protected void write(PacketBuffer buffer) throws IOException {
-        buffer.writeInt(src.id);
-        buffer.writeInt(dest.id);
+        buffer.writeInt(srcID);
+        buffer.writeInt(destID);
 
     }
 
     @Override
     public void process(EntityPlayer player, Side side) {
+        Waypoint src = Waypoint.getWaypoint(srcID);
+        Waypoint dest = Waypoint.getWaypoint(destID);
         if (src == null || dest == null) return;
 
         if (!BlockWaypoint.isEntityOnWaypoint(player.worldObj, src.pos, player)) return;

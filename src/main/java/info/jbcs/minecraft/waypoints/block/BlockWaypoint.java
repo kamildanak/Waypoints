@@ -137,7 +137,7 @@ public class BlockWaypoint extends Block {
         if (src == null) return true;
         if (src.name.isEmpty()) {
             activateStructure(world, pos);
-            MsgNameWaypoint msg = new MsgNameWaypoint(src, "Waypoint #" + src.id);
+            MsgNameWaypoint msg = new MsgNameWaypoint(src.pos, src.id, "Waypoint #" + src.id);
             PacketDispatcher.sendTo(msg, (EntityPlayerMP) player);
         } else {
             ArrayList<Waypoint> waypoints = new ArrayList<Waypoint>();
