@@ -52,8 +52,8 @@ public class ItemWaypoint extends ItemBlock {
         while (world.getBlockState(new BlockPos(ox, y, oz - 1)).getBlock() == blockWaypoint) oz--;
 
         if (placeBlockAt(stack, player, world, pos, side, hx, hy, hz, meta)) {
-            world.playSound(x + 0.5F, y + 0.5F, z + 0.5F, SoundEvents.block_stone_place, SoundCategory.MASTER,
-                    (blockWaypoint.getStepSound().getVolume() + 1.0F) / 2.0F, blockWaypoint.getStepSound().getPitch() * 0.8F, true);
+            world.playSound(x + 0.5F, y + 0.5F, z + 0.5F, SoundEvents.BLOCK_STONE_PLACE, SoundCategory.MASTER,
+                    (blockWaypoint.getSoundType().getVolume() + 1.0F) / 2.0F, blockWaypoint.getSoundType().getPitch() * 0.8F, true);
             --stack.stackSize;
         }
 

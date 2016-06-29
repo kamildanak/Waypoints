@@ -55,7 +55,7 @@ public class GuilScrolledBox extends GuiElement {
     @Override
     public void render() {
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-        Minecraft.getMinecraft().getTextureManager().bindTexture(Gui.optionsBackground);
+        Minecraft.getMinecraft().getTextureManager().bindTexture(Gui.OPTIONS_BACKGROUND);
         x0 = -gui.screenX;
         x1 = -gui.screenX + gui.width;
 
@@ -78,7 +78,7 @@ public class GuilScrolledBox extends GuiElement {
         GL11.glEnable(GL11.GL_ALPHA_TEST);
         GL11.glDisable(GL11.GL_BLEND);
 
-        Minecraft.getMinecraft().getTextureManager().bindTexture(Gui.optionsBackground);
+        Minecraft.getMinecraft().getTextureManager().bindTexture(Gui.OPTIONS_BACKGROUND);
         overlayBackground(-gui.screenY, y, 0x404040, 0xff, 0xff);
         overlayBackground(h, -gui.screenY + gui.height, 0x404040, 0xff, 0xff);
     }

@@ -27,14 +27,13 @@ import net.minecraftforge.fml.common.registry.GameRegistry;
 import java.io.File;
 import java.io.IOException;
 
-import static net.minecraft.util.SoundEvent.soundEventRegistry;
 import static net.minecraftforge.fml.common.registry.GameRegistry.addRecipe;
 
 @Mod(modid = Waypoints.MODID, name = Waypoints.MODNAME, version = Waypoints.VERSION)
 public class Waypoints {
     public static final String MODID = "Waypoints";
     public static final String MODNAME = "Waypoints";
-    public static final String VERSION = "1.9-1.2.0b";
+    public static final String VERSION = "1.9.4-1.2.1";
     public static boolean compactView;
     public static boolean craftable;
     public static boolean allowActivation;
@@ -70,7 +69,7 @@ public class Waypoints {
 
     @EventHandler
     public void init(FMLInitializationEvent event) {
-        tabWaypoints = CreativeTabs.tabDecorations;
+        tabWaypoints = CreativeTabs.DECORATIONS;
 
         blockWaypoint = new BlockWaypoint();
         GameRegistry.registerBlock(blockWaypoint, ItemWaypoint.class, "waypoint");
@@ -78,7 +77,7 @@ public class Waypoints {
         compactView = config.get("general", "compact view", true, "Only show one line in Waypoint GUI, in order to fit more waypoints on the screen").getBoolean();
         craftable = config.get("general", "craftable", true, "Set to false to completely disable crafting recipe").getBoolean();
         if (craftable)
-            addRecipe(new ItemStack(blockWaypoint, 1), "SSS", "SES", 'S', Blocks.stone, 'E', Items.ender_pearl);
+            addRecipe(new ItemStack(blockWaypoint, 1), "SSS", "SES", 'S', Blocks.STONE, 'E', Items.ENDER_PEARL);
         allowActivation = config.get("general", "can_no_ops_activate", true, "If set to false only ops can enable Waypoins").getBoolean();
         playSounds = config.get("general", "play sounds", true, "Set to false to disable teleportation sounds").getBoolean();
         playSoundEnderman = config.get("general", "play sound enderman", true, "Set to false to play custom sound").getBoolean();
@@ -94,12 +93,12 @@ public class Waypoints {
         for (int i = 0; i < potionEffects.length; i++)
             potionEffects[i] = new PotionEffect(Potion.getPotionById(effects[i]), effectsDurations[i] * 10);
         if (playSoundEnderman)
-            soundEvent = SoundEvents.entity_endermen_teleport;
+            soundEvent = SoundEvents.ENTITY_ENDERMEN_TELEPORT;
         else {
-            int soundEventId = soundEventRegistry.getKeys().size();
+            int soundEventId = SoundEvent.REGISTRY.getKeys().size();
             ResourceLocation resourcelocation = new ResourceLocation(MODID, "waypoints.sound.teleport");
-            soundEventRegistry.register(soundEventId++, resourcelocation, new SoundEvent(resourcelocation));
-            soundEvent = (SoundEvent) soundEventRegistry.getObject(resourcelocation);
+            SoundEvent.REGISTRY.register(soundEventId++, resourcelocation, new SoundEvent(resourcelocation));
+            soundEvent = (SoundEvent) SoundEvent.REGISTRY.getObject(resourcelocation);
         }
         //
         MinecraftForge.EVENT_BUS.register(this);

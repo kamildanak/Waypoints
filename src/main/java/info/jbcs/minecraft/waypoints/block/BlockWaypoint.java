@@ -39,9 +39,9 @@ public class BlockWaypoint extends Block {
     public static final PropertyEnum TYPE = PropertyEnum.create("type", EnumType.class);
 
     public BlockWaypoint() {
-        super(Material.rock);
+        super(Material.ROCK);
         setUnlocalizedName("waypoint");
-        this.setCreativeTab(CreativeTabs.tabTransport);
+        this.setCreativeTab(CreativeTabs.TRANSPORTATION);
         setLightOpacity(255);
         this.setLightOpacity(0);
 
@@ -56,8 +56,8 @@ public class BlockWaypoint extends Block {
     }
 
     @Override
-    public SoundType getStepSound() {
-        return Blocks.stone.getStepSound();
+    public SoundType getSoundType() {
+        return Blocks.STONE.getSoundType();
     }
 
     /* Function returns corner that is saved to Waypoints database */
@@ -222,7 +222,7 @@ public class BlockWaypoint extends Block {
     }
 
     @Override
-    public void onEntityCollidedWithBlock(World world, BlockPos pos, Entity entity) {
+    public void onEntityWalk(World world, BlockPos pos, Entity entity) {
         if (!world.isRemote) {
             Waypoint src = Waypoint.getWaypoint(world, getCorner(world, pos));
             if (src == null) return;
@@ -258,7 +258,8 @@ public class BlockWaypoint extends Block {
         }
     }
 
-    public void onNeighborBlockChange(World world, BlockPos pos, IBlockState state, Block block) {
+    @Override
+    public void neighborChanged(IBlockState state, World world, BlockPos pos, Block blockIn) {
         Waypoint waypoint = Waypoint.getWaypoint(world, getCorner(world, pos));
         if (waypoint == null) return;
         BlockPos corner = getCorner(world, pos);

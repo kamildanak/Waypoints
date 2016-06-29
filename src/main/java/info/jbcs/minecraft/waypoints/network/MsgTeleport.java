@@ -71,11 +71,6 @@ public class MsgTeleport extends AbstractMessage.AbstractServerMessage<MsgTelepo
                 player.addPotionEffect(new PotionEffect(Waypoints.potionEffects[i]));
             }
         }
-
-        if(Waypoints.playSounds) {
-            player.worldObj.playSound(player.posX, player.posY, player.posZ, Waypoints.soundEvent, SoundCategory.MASTER, 1.0f, 1.0f, true);
-            player.worldObj.playSound(dest.pos.getX() + size.getX() / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size.getZ() / 2.0, Waypoints.soundEvent, SoundCategory.MASTER, 1.0f, 1.0f, true);
-        }
     }
 
 }

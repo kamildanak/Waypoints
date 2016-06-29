@@ -1,8 +1,11 @@
 package info.jbcs.minecraft.waypoints.network;
 
+import info.jbcs.minecraft.waypoints.Waypoint;
+import info.jbcs.minecraft.waypoints.Waypoints;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.SoundCategory;
 import net.minecraftforge.fml.relauncher.Side;
 
 import java.io.IOException;
@@ -41,6 +44,7 @@ public class MsgRedDust extends AbstractMessage.AbstractClientMessage<MsgRedDust
 
     @Override
     public void process(EntityPlayer player, Side side) {
+        player.worldObj.playSound(player, this.x, this.y, this.z, Waypoints.soundEvent, SoundCategory.MASTER, 1.0f, 1.0f);
         for (int ex = 0; ex < 8; ex++) {
             for (int ey = 0; ey < 8; ey++) {
                 for (int ez = 0; ez < 8; ez++) {
