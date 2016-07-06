@@ -12,32 +12,34 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
 
 public class MsgTeleport extends Message {
-    private static Waypoint src, dest;
+    private int srcID, destID;
 
     public MsgTeleport() {
     }
 
-    public MsgTeleport(Waypoint src, Waypoint dest) {
-        this.src = src;
-        this.dest = dest;
+    public MsgTeleport(int srcId, int destId) {
+        this.srcID = srcId;
+        this.destID = destId;
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        src = Waypoint.getWaypoint(buf.readInt());
-        dest = Waypoint.getWaypoint(buf.readInt());
+        srcID = buf.readInt();
+        destID = buf.readInt();
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        buf.writeInt(src.id);
-        buf.writeInt(dest.id);
+        buf.writeInt(srcID);
+        buf.writeInt(destID);
     }
 
     public static class Handler implements IMessageHandler<MsgTeleport, IMessage> {
 
         @Override
         public IMessage onMessage(MsgTeleport message, MessageContext ctx) {
+            Waypoint src = Waypoint.getWaypoint(message.srcID);
+            Waypoint dest = Waypoint.getWaypoint(message.destID);
             if (src == null || dest == null) return null;
 
             EntityPlayerMP player = ctx.getServerHandler().playerEntity;

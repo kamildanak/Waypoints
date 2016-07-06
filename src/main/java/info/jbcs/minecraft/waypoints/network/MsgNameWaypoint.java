@@ -10,26 +10,36 @@ import info.jbcs.minecraft.waypoints.gui.GuiNameWaypoint;
 import io.netty.buffer.ByteBuf;
 
 public class MsgNameWaypoint extends Message {
-    private Waypoint w;
+    private int x, y, z;
+    private int waypointId;
     private String name;
 
     public MsgNameWaypoint() {
     }
 
-    public MsgNameWaypoint(Waypoint w, String name) {
-        this.w = w;
+    public MsgNameWaypoint(int x, int y, int z, int waypointId, String name) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.waypointId = waypointId;
         this.name = name;
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        w = Waypoint.getWaypoint(buf.readInt());
+        x = buf.readInt();
+        y = buf.readInt();
+        z = buf.readInt();
+        waypointId = buf.readInt();
         name = ByteBufUtils.readUTF8String(buf);
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        buf.writeInt(w.id);
+        buf.writeInt(x);
+        buf.writeInt(y);
+        buf.writeInt(z);
+        buf.writeInt(waypointId);
         ByteBufUtils.writeUTF8String(buf, name);
     }
 
@@ -37,7 +47,7 @@ public class MsgNameWaypoint extends Message {
 
         @Override
         public IMessage onMessage(MsgNameWaypoint message, MessageContext ctx) {
-            FMLCommonHandler.instance().showGuiScreen(new GuiNameWaypoint(message.w, message.name));
+            FMLCommonHandler.instance().showGuiScreen(new GuiNameWaypoint(message.x, message.y, message.z, message.waypointId, message.name));
             return null;
         }
     }

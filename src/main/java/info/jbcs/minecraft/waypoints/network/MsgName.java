@@ -10,26 +10,36 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
 
 public class MsgName extends Message {
-    private Waypoint w;
+    private int x, y, z;
+    private int waypointId;
     private String name;
 
     public MsgName() {
     }
 
-    public MsgName(Waypoint w, String name) {
-        this.w = w;
+    public MsgName(int x, int y, int z, int waypointId, String name) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.waypointId = waypointId;
         this.name = name;
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        w = Waypoint.getWaypoint(buf.readInt());
+        x = buf.readInt();
+        y = buf.readInt();
+        z = buf.readInt();
+        waypointId = buf.readInt();
         name = ByteBufUtils.readUTF8String(buf);
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        buf.writeInt(w.id);
+        buf.writeInt(x);
+        buf.writeInt(y);
+        buf.writeInt(z);
+        buf.writeInt(waypointId);
         ByteBufUtils.writeUTF8String(buf, name);
     }
 
@@ -37,14 +47,16 @@ public class MsgName extends Message {
 
         @Override
         public IMessage onMessage(MsgName message, MessageContext ctx) {
-            if (message.w == null) return null;
-
             EntityPlayerMP player = ctx.getServerHandler().playerEntity;
-            if (!BlockWaypoint.isEntityOnWaypoint(player.worldObj, message.w.x, message.w.y, message.w.z, player))
-                return null;
+            //if (!BlockWaypoint.isEntityOnWaypoint(player.worldObj, message.x, message.y, message.z, player))
+            //    return null;
 
-            message.w.name = message.name;
-            message.w.changed = true;
+
+            Waypoint w = Waypoint.getWaypoint(message.x, message.y, message.z, player.dimension);
+            if (w == null) return null;
+
+            w.name = message.name;
+            w.changed = true;
             return null;
         }
     }

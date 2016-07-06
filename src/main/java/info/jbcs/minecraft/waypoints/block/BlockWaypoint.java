@@ -103,7 +103,7 @@ public class BlockWaypoint extends Block {
 
         if (!isEntityOnWaypoint(world, x, y, z, player)) return true;
         if (src.name.isEmpty()) {
-            MsgNameWaypoint msg = new MsgNameWaypoint(src, "Waypoint #" + src.id);
+            MsgNameWaypoint msg = new MsgNameWaypoint(src.x, src.y, src.z, src.id, "Waypoint #" + src.id);
             Waypoints.instance.messagePipeline.sendTo(msg, (EntityPlayerMP) player);
 
         } else if (player.isSneaking() && (Waypoints.allowActivation || isOP)) {

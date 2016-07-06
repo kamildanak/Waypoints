@@ -36,7 +36,7 @@ public class GuiEditWaypoint extends GuiScreenPlus {
         addChild(new GuiExButton(7, 77, 49, 20, "OK") {
             @Override
             public void onClick() {
-                MsgEdit msg = new MsgEdit(Waypoint.getWaypoint(currentWaypointId), nameEdit.getText(), linkedId);
+                MsgEdit msg = new MsgEdit(currentWaypointId, nameEdit.getText(), linkedId);
                 Waypoints.instance.messagePipeline.sendToServer(msg);
                 close();
             }

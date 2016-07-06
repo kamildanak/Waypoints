@@ -43,7 +43,7 @@ public class GuiWaypoints extends GuiScreenPlus {
                         if (selectedButton == null) return;
                         final Waypoint wp = selectedButton.waypoint;
                         if (wp == null) return;
-                        MsgTeleport msg = new MsgTeleport(Waypoint.getWaypoint(currentWaypointId), Waypoint.getWaypoint(wp.id));
+                        MsgTeleport msg = new MsgTeleport(currentWaypointId, wp.id);
                         Waypoints.instance.messagePipeline.sendToServer(msg);
                         closeWaypoints();
                         return;
@@ -74,7 +74,7 @@ public class GuiWaypoints extends GuiScreenPlus {
                 if (selectedButton == null) return;
                 final Waypoint wp = selectedButton.waypoint;
                 if (wp == null) return;
-                MsgTeleport msg = new MsgTeleport(Waypoint.getWaypoint(currentWaypointId), Waypoint.getWaypoint(wp.id));
+                MsgTeleport msg = new MsgTeleport(currentWaypointId, wp.id);
                 Waypoints.instance.messagePipeline.sendToServer(msg);
                 closeWaypoints();
             }

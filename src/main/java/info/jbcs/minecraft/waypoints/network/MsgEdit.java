@@ -10,29 +10,29 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
 
 public class MsgEdit extends Message {
-    private Waypoint w;
+    private int waypointId;
     private String name;
     private int linked_id;
 
     public MsgEdit() {
     }
 
-    public MsgEdit(Waypoint w, String name, int linked_id) {
-        this.w = w;
+    public MsgEdit(int waypointId, String name, int linked_id) {
+        this.waypointId = waypointId;
         this.name = name;
         this.linked_id = linked_id;
     }
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        w = Waypoint.getWaypoint(buf.readInt());
+        waypointId = buf.readInt();
         name = ByteBufUtils.readUTF8String(buf);
         linked_id = buf.readInt();
     }
 
     @Override
     public void toBytes(ByteBuf buf) {
-        buf.writeInt(w.id);
+        buf.writeInt(waypointId);
         ByteBufUtils.writeUTF8String(buf, name);
         buf.writeInt(linked_id);
     }
@@ -40,16 +40,17 @@ public class MsgEdit extends Message {
     public static class Handler implements IMessageHandler<MsgEdit, IMessage> {
 
         @Override
-        public IMessage onMessage(MsgEdit message, MessageContext ctx) {
-            if (message.w == null) return null;
+        public IMessage onMessage(MsgEdit message, MessageContext ctx){
+            Waypoint w = Waypoint.getWaypoint(message.waypointId);
+            if(w == null) return null;
 
             EntityPlayerMP player = ctx.getServerHandler().playerEntity;
-            if (!BlockWaypoint.isEntityOnWaypoint(player.worldObj, message.w.x, message.w.y, message.w.z, player))
+            if (!BlockWaypoint.isEntityOnWaypoint(player.worldObj, w.x, w.y, w.z, player))
                 return null;
 
-            message.w.name = message.name;
-            message.w.linked_id = message.linked_id;
-            message.w.changed = true;
+            w.name = message.name;
+            w.linked_id = message.linked_id;
+            w.changed = true;
             return null;
         }
     }

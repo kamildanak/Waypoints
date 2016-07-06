@@ -21,7 +21,7 @@ import net.minecraftforge.common.config.Configuration;
 import java.io.File;
 import java.io.IOException;
 
-@Mod(modid = "Waypoints", name = "Waypoints", version = "1.1.1")
+@Mod(modid = "Waypoints", name = "Waypoints", version = "1.1.1a")
 public class Waypoints {
     static Configuration config;
     public static boolean compactView;

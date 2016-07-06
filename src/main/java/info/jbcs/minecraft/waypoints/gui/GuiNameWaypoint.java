@@ -7,7 +7,7 @@ import info.jbcs.minecraft.waypoints.network.MsgName;
 public class GuiNameWaypoint extends GuiScreenPlus {
     GuiEdit nameEdit;
 
-    public GuiNameWaypoint(final Waypoint waypoint, String suggestedName) {
+    public GuiNameWaypoint(final int wx, final int wy, final int wz, final int waypointId, String suggestedName) {
         super(117, 73, "waypoints:textures/gui-name-waypoint.png");
 
         addChild(new GuiLabel(9, 9, "Name waypoint:"));
@@ -17,7 +17,7 @@ public class GuiNameWaypoint extends GuiScreenPlus {
         addChild(new GuiExButton(7, 45, 49, 20, "OK") {
             @Override
             public void onClick() {
-                MsgName msg = new MsgName(waypoint, nameEdit.getText());
+                MsgName msg = new MsgName(wx, wy, wz, waypointId, nameEdit.getText());
                 Waypoints.instance.messagePipeline.sendToServer(msg);
                 close();
             }
