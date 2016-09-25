@@ -54,6 +54,7 @@ public class MsgName extends AbstractMessage.AbstractServerMessage<MsgName> {
         if(w==null) return;
         w.name = name;
         w.changed = true;
+        Waypoints.log("Waypoint :" + w.name + ": (" + w.pos.toString() + ") named  '" + w.name + "'");
     }
 
 }

@@ -150,6 +150,7 @@ public class BlockWaypoint extends Block {
             activateStructure(world, pos);
             MsgNameWaypoint msg = new MsgNameWaypoint(src.pos, src.id, "Waypoint #" + src.id);
             PacketDispatcher.sendTo(msg, (EntityPlayerMP) player);
+            Waypoints.log("User " + player.getName() + " asked to name Waypoint #" + src.id);
         } else {
             ArrayList<Waypoint> waypoints = new ArrayList<Waypoint>();
             WaypointPlayerInfo info = WaypointPlayerInfo.get(player.getUniqueID().toString());
@@ -161,10 +162,13 @@ public class BlockWaypoint extends Block {
                     waypoints.add(w);
 
             EntityPlayerMP playerMP = (EntityPlayerMP) player;
-            if (player.isSneaking() && (Waypoints.allowActivation || isOP(player)))
+            if (player.isSneaking() && (Waypoints.allowActivation || isOP(player))) {
                 PacketDispatcher.sendTo(new MsgEditWaypoint(src.id, src.name, src.linked_id, waypoints), playerMP);
-            else
+                Waypoints.log("User " + player.getName() + " edits Waypoint #" + src.id);
+            } else {
                 PacketDispatcher.sendTo(new MsgWaypointsList(src.id, waypoints), playerMP);
+                Waypoints.log("User " + player.getName() + " was sent list of " + waypoints.size() + " Waypoints");
+            }
         }
         return true;
     }

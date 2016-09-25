@@ -23,6 +23,8 @@ import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.*;
 import net.minecraftforge.fml.common.registry.GameRegistry;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,6 +42,7 @@ public class Waypoints {
     public static boolean playSounds;
     public static boolean playSoundEnderman;
     public static boolean commonDiscoveryList;
+    public static boolean logEvents;
     public static int maxSize;
     public static int minSize;
     public static boolean allowNotSquare;
@@ -56,6 +59,7 @@ public class Waypoints {
     public static int potionEffectsChances[];
     public static int teleportationExhaustion;
     public static SoundEvent soundEvent;
+    private static Logger logger;
 
     public Waypoints() {
     }
@@ -64,12 +68,13 @@ public class Waypoints {
     public void preInit(FMLPreInitializationEvent event) {
         config = new Configuration(event.getSuggestedConfigurationFile());
         config.load();
-
         proxy.preInit();
     }
 
     @EventHandler
     public void init(FMLInitializationEvent event) {
+        logger = LogManager.getLogger(Waypoints.MODNAME);
+        Waypoints.log("Hello");
         tabWaypoints = CreativeTabs.DECORATIONS;
 
         blockWaypoint = new BlockWaypoint();
@@ -113,7 +118,9 @@ public class Waypoints {
         try {
             Waypoint.write(new File(file, "waypoints.dat"));
             WaypointPlayerInfo.writeAll();
+            Waypoints.log("Saving waypoints data seems successful");
         } catch (IOException e) {
+            Waypoints.log("Error saving waypoints data");
             e.printStackTrace();
         }
         loadedWorldDir = null;
@@ -136,9 +143,15 @@ public class Waypoints {
 
         try {
             Waypoint.read(waypointsLocation);
+            Waypoints.log("Loading waypoints data seems successful");
         } catch (IOException e) {
             e.printStackTrace();
+            Waypoints.log("Error loading waypoints data");
         }
+    }
+
+    public static void log(String message) {
+        if (logEvents) logger.info(message);
     }
 
     private void loadConfigOptions()
@@ -163,6 +176,8 @@ public class Waypoints {
                 "Exhaustion caused by using waypoint").getInt();
         commonDiscoveryList = config.get("general", "commonDiscoveryList", false,
                 "Share discovered Waypoints between players").getBoolean();
+        logEvents = config.get("general", "logEvents", false,
+                "Log events such as waypoint creation, discovery, waypoint lists send to players...").getBoolean();
 
         // Effects and exhaustion
         int[] effects = config.get("general", "effects ids", new int[]{9, 9, 15},

@@ -58,11 +58,13 @@ public class WaypointPlayerInfo {
     }
 
     public void addWaypoint(int id) {
+        Waypoints.log("User " + username + " learned about Waypoint #" + id);
         discoveredWaypoints.put(id, 1);
         changed = true;
     }
 
     public void removeWaypoint(int id) {
+        Waypoints.log("User " + username + " forgot about Waypoint #" + id);
         discoveredWaypoints.remove(id);
         changed = true;
     }
@@ -81,6 +83,7 @@ public class WaypointPlayerInfo {
             int id = tag.getInteger("" + i);
             addWaypoint(id);
         }
+        Waypoints.log("User " + username + " read about " + count + " Waypoints");
     }
 
     private void write(File file) throws IOException {
@@ -98,6 +101,7 @@ public class WaypointPlayerInfo {
         byte[] bytes = new byte[buffer.readableBytes()];
         buffer.readBytes(bytes);
         Files.write(file.toPath(), bytes);
+        Waypoints.log("User " + username + " wrote down about " + keys.size() + " Waypoints");
 
         changed = false;
     }

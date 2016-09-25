@@ -59,6 +59,7 @@ public class Waypoint {
         existingWaypoints.remove(wp);
 
         changed = true;
+        Waypoints.log("Waypoint :" + wp.name + ": (" + wp.pos.toString() + ") removed");
     }
 
     public static boolean isWaypoint(World world, BlockPos pos) {
@@ -93,6 +94,7 @@ public class Waypoint {
             wp = new Waypoint();
             wp.initialize(nextId, pos, dimension);
             wp.name = "";
+            Waypoints.log("Waypoint :" + wp.name + ": (" + wp.pos.toString() + ") created");
         }
 
         return wp;
