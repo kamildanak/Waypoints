@@ -39,6 +39,7 @@ public class Waypoints {
     public static boolean allowActivation;
     public static boolean playSounds;
     public static boolean playSoundEnderman;
+    public static boolean commonDiscoveryList;
     public static int maxSize;
     public static int minSize;
     public static boolean allowNotSquare;
@@ -100,6 +101,7 @@ public class Waypoints {
             SoundEvent.REGISTRY.register(soundEventId++, resourcelocation, new SoundEvent(resourcelocation));
             soundEvent = (SoundEvent) SoundEvent.REGISTRY.getObject(resourcelocation);
         }
+        commonDiscoveryList = config.get("general", "commonDiscoveryList", false, "Share discovered Waypoints between players").getBoolean();
         //
         MinecraftForge.EVENT_BUS.register(this);
         config.save();

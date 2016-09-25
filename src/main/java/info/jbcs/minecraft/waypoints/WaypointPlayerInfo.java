@@ -24,6 +24,7 @@ public class WaypointPlayerInfo {
     }
 
     public static WaypointPlayerInfo get(String nn) {
+        if(Waypoints.commonDiscoveryList) nn = "WaypointsCommonDiscoveryList";
         WaypointPlayerInfo info = objects.get(nn);
         if (info != null) return info;
 
