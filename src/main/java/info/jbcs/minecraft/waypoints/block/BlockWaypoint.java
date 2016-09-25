@@ -151,6 +151,9 @@ public class BlockWaypoint extends Block {
             MsgNameWaypoint msg = new MsgNameWaypoint(src.pos, src.id, "Waypoint #" + src.id);
             PacketDispatcher.sendTo(msg, (EntityPlayerMP) player);
             Waypoints.log("User " + player.getName() + " asked to name Waypoint #" + src.id);
+            WaypointPlayerInfo info = WaypointPlayerInfo.get(player.getUniqueID().toString());
+            if (info == null) return false;
+            info.addWaypoint(src.id);
         } else {
             ArrayList<Waypoint> waypoints = new ArrayList<Waypoint>();
             WaypointPlayerInfo info = WaypointPlayerInfo.get(player.getUniqueID().toString());
