@@ -42,6 +42,7 @@ public class Waypoints {
     public static boolean playSounds;
     public static boolean playSoundEnderman;
     public static boolean commonDiscoveryList;
+    public static boolean allowWaypointDeletion;
     public static boolean logEvents;
     public static int maxSize;
     public static int minSize;
@@ -176,6 +177,9 @@ public class Waypoints {
                 "Exhaustion caused by using waypoint").getInt();
         commonDiscoveryList = config.get("general", "commonDiscoveryList", false,
                 "Share discovered Waypoints between players").getBoolean();
+        allowWaypointDeletion = config.get("general", "allowWaypointDeletion", true,
+                "Allow deleting waypoints from list of discovered waypoints (usefull with commonDiscoveryList")
+                .getBoolean();
         logEvents = config.get("general", "logEvents", false,
                 "Log events such as waypoint creation, discovery, waypoint lists send to players...").getBoolean();
 
