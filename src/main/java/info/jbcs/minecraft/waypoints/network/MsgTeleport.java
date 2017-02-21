@@ -48,15 +48,15 @@ public class MsgTeleport extends AbstractMessage.AbstractServerMessage<MsgTelepo
         Waypoint dest = Waypoint.getWaypoint(destID);
         if (src == null || dest == null) return;
 
-        if (!BlockWaypoint.isEntityOnWaypoint(player.worldObj, src.pos, player)) return;
+        if (!BlockWaypoint.isEntityOnWaypoint(player.world, src.pos, player)) return;
         player.dismountRidingEntity();
 
         MsgRedDust msg1 = new MsgRedDust(player.dimension, player.posX, player.posY, player.posZ);
 
         if (player.dimension != dest.dimension)
-            player.worldObj.getMinecraftServer().getPlayerList().transferPlayerToDimension((EntityPlayerMP) player, dest.dimension,
+            player.world.getMinecraftServer().getPlayerList().transferPlayerToDimension((EntityPlayerMP) player, dest.dimension,
                     new WaypointTeleporter(FMLCommonHandler.instance().getMinecraftServerInstance().worldServerForDimension(dest.dimension)));
-        BlockPos size = BlockWaypoint.checkSize(player.worldObj, dest.pos);
+        BlockPos size = BlockWaypoint.checkSize(player.world, dest.pos);
         player.setLocationAndAngles(dest.pos.getX() + size.getX() / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size.getZ() / 2.0, player.rotationYaw, 0);
         player.setPositionAndUpdate(dest.pos.getX() + size.getX() / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size.getZ() / 2.0);
 

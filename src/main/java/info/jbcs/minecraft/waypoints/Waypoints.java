@@ -22,7 +22,6 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.*;
-import net.minecraftforge.fml.common.registry.GameRegistry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -31,11 +30,12 @@ import java.io.IOException;
 
 import static net.minecraftforge.fml.common.registry.GameRegistry.addRecipe;
 
-@Mod(modid = Waypoints.MODID, name = Waypoints.MODNAME, version = Waypoints.VERSION)
+@Mod(modid = Waypoints.MODID, name = Waypoints.MODNAME, version = Waypoints.VERSION,
+        acceptedMinecraftVersions = "[1.11,1.11.2]")
 public class Waypoints {
     public static final String MODID = "waypoints";
     public static final String MODNAME = "waypoints";
-    public static final String VERSION = "1.10.2-1.2.2";
+    public static final String VERSION = "1.11.2-1.2.2";
     public static boolean compactView;
     public static boolean craftable;
     public static boolean allowActivation;
@@ -79,7 +79,6 @@ public class Waypoints {
         tabWaypoints = CreativeTabs.DECORATIONS;
 
         blockWaypoint = new BlockWaypoint();
-        GameRegistry.registerBlock(blockWaypoint, ItemWaypoint.class, "waypoint");
         proxy.init();
         loadConfigOptions();
 

@@ -48,9 +48,9 @@ public class MsgName extends AbstractMessage.AbstractServerMessage<MsgName> {
 
     @Override
     public void process(EntityPlayer player, Side side) {
-        if (!BlockWaypoint.isEntityOnWaypoint(player.worldObj, pos, player))
+        if (!BlockWaypoint.isEntityOnWaypoint(player.world, pos, player))
             return;
-        Waypoint w = Waypoint.getWaypoint(player.worldObj, pos);
+        Waypoint w = Waypoint.getWaypoint(player.world, pos);
         if(w==null) return;
         w.name = name;
         w.changed = true;

@@ -23,13 +23,14 @@ public class ItemWaypoint extends ItemBlock {
     }
 
     @Override
-    public EnumActionResult onItemUse(ItemStack stack, EntityPlayer player, World world, BlockPos pos, EnumHand hand, EnumFacing side, float hx, float hy, float hz) {
+    public EnumActionResult onItemUse(EntityPlayer player, World world, BlockPos pos, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ){
         int x = pos.getX(), y = pos.getY(), z = pos.getZ();
         Block block = world.getBlockState(pos).getBlock();
 
-        if (!block.isReplaceable(world, pos)) pos = pos.add(side.getDirectionVec());
-        if (stack.stackSize == 0) return EnumActionResult.SUCCESS;
-        if (!player.canPlayerEdit(pos, side, stack)) return EnumActionResult.SUCCESS;
+        if (!block.isReplaceable(world, pos)) pos = pos.add(facing.getDirectionVec());
+        ItemStack stack = player.getHeldItem(hand);
+        if (stack.getCount() == 0) return EnumActionResult.SUCCESS;
+        if (!player.canPlayerEdit(pos, facing, stack)) return EnumActionResult.SUCCESS;
 
         int north = countWaypointBlocks(world, pos, 0, 0, 1, Waypoints.maxSize - 1);
         int south = countWaypointBlocks(world, pos, 0, 0, -1, Waypoints.maxSize - 1);
@@ -44,17 +45,17 @@ public class ItemWaypoint extends ItemBlock {
             return EnumActionResult.SUCCESS;
 
         int oldMeta = this.getMetadata(stack.getItemDamage());
-        IBlockState meta = blockWaypoint.onBlockPlaced(world, pos, side, hx, hy, hz, oldMeta, player);
+        IBlockState meta = Waypoints.blockWaypoint.getStateForPlacement(world, pos, facing, hitX, hitY, hitZ, oldMeta, player, hand);
 
 
         int ox = x, oz = z;
         while (world.getBlockState(new BlockPos(ox - 1, y, oz)).getBlock() == blockWaypoint) ox--;
         while (world.getBlockState(new BlockPos(ox, y, oz - 1)).getBlock() == blockWaypoint) oz--;
 
-        if (placeBlockAt(stack, player, world, pos, side, hx, hy, hz, meta)) {
+        if (placeBlockAt(stack, player, world, pos, facing, hitX, hitY, hitZ, meta)) {
             world.playSound(x + 0.5F, y + 0.5F, z + 0.5F, SoundEvents.BLOCK_STONE_PLACE, SoundCategory.MASTER,
                     (blockWaypoint.getSoundType().getVolume() + 1.0F) / 2.0F, blockWaypoint.getSoundType().getPitch() * 0.8F, true);
-            --stack.stackSize;
+            stack.setCount(stack.getCount()-1);
         }
 
         return EnumActionResult.SUCCESS;

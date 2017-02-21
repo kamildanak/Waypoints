@@ -44,11 +44,11 @@ public class MsgRedDust extends AbstractMessage.AbstractClientMessage<MsgRedDust
 
     @Override
     public void process(EntityPlayer player, Side side) {
-        player.worldObj.playSound(player, this.x, this.y, this.z, Waypoints.soundEvent, SoundCategory.MASTER, 1.0f, 1.0f);
+        player.world.playSound(player, this.x, this.y, this.z, Waypoints.soundEvent, SoundCategory.MASTER, 1.0f, 1.0f);
         for (int ex = 0; ex < 8; ex++) {
             for (int ey = 0; ey < 8; ey++) {
                 for (int ez = 0; ez < 8; ez++) {
-                    player.worldObj.spawnParticle(EnumParticleTypes.REDSTONE, this.x - 1 + ex / 4.0, this.y - 1.8 + ey / 4.0,
+                    player.world.spawnParticle(EnumParticleTypes.REDSTONE, this.x - 1 + ex / 4.0, this.y - 1.8 + ey / 4.0,
                             this.z - 1 + ez / 4.0, 110.0D / 250, 25.0D / 250, 130.0D / 250);
                 }
             }

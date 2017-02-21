@@ -30,7 +30,7 @@ public class WaypointTeleporter extends Teleporter {
             if (thePlayer.dimension != dim) {
                 mcServer.getPlayerList().transferPlayerToDimension(thePlayer, dim, new WaypointTeleporter(mcServer.worldServerForDimension(dim)));
             }
-            BlockPos size = BlockWaypoint.checkSize(thePlayer.worldObj, w.pos);
+            BlockPos size = BlockWaypoint.checkSize(thePlayer.world, w.pos);
             double x = w.pos.getX() + size.getX() / 2.0;
             double y = w.pos.getY() + 0.5;
             double z = w.pos.getZ() + size.getZ() / 2.0;
@@ -44,7 +44,7 @@ public class WaypointTeleporter extends Teleporter {
                 theMob.timeUntilPortal = 300;
                 travelToDimension(theMob, dim, w);
             } else {
-                BlockPos size = BlockWaypoint.checkSize(theMob.worldObj, w.pos);
+                BlockPos size = BlockWaypoint.checkSize(theMob.world, w.pos);
                 double x = w.pos.getX() + size.getX() / 2.0;
                 double y = w.pos.getY() + 0.5;
                 double z = w.pos.getZ() + size.getZ() / 2.0;
@@ -57,7 +57,7 @@ public class WaypointTeleporter extends Teleporter {
     }
 
     public void travelToDimension(EntityLiving entityIn, int dim, Waypoint w) {
-        if (!entityIn.worldObj.isRemote && !entityIn.isDead) {
+        if (!entityIn.world.isRemote && !entityIn.isDead) {
             MinecraftServer minecraftserver = FMLCommonHandler.instance().getMinecraftServerInstance();
             int j = entityIn.dimension;
             WorldServer wsOld = minecraftserver.worldServerForDimension(j);
@@ -104,7 +104,7 @@ public class WaypointTeleporter extends Teleporter {
                 if (entityIn.isEntityAlive()) {
                     entityIn.setLocationAndAngles(d0, entityIn.posY, d1, entityIn.rotationYaw, entityIn.rotationPitch);
                     this.placeInPortal(entityIn, f);
-                    wsNew.spawnEntityInWorld(entityIn);
+                    wsNew.spawnEntity(entityIn);
                     wsNew.updateEntityWithOptionalForce(entityIn, false);
                 }
 

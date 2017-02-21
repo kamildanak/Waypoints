@@ -82,8 +82,8 @@ public class GuiPickWaypoint extends GuiScreenPlus {
     }
 
     public void closeWaypoints() {
-        Minecraft.getMinecraft().thePlayer.closeScreen();
-        inventorySlots.onContainerClosed(Minecraft.getMinecraft().thePlayer);
+        Minecraft.getMinecraft().player.closeScreen();
+        inventorySlots.onContainerClosed(Minecraft.getMinecraft().player);
         close();
     }
 

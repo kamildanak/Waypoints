@@ -4,6 +4,7 @@ import info.jbcs.minecraft.waypoints.Waypoint;
 import info.jbcs.minecraft.waypoints.WaypointPlayerInfo;
 import info.jbcs.minecraft.waypoints.WaypointTeleporter;
 import info.jbcs.minecraft.waypoints.Waypoints;
+import info.jbcs.minecraft.waypoints.item.ItemWaypoint;
 import info.jbcs.minecraft.waypoints.network.*;
 import net.minecraft.block.Block;
 import net.minecraft.block.SoundType;
@@ -27,6 +28,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +42,9 @@ public class BlockWaypoint extends Block {
 
     public BlockWaypoint() {
         super(Material.ROCK);
-        setUnlocalizedName("waypoint");
+        String name = "waypoint";
+        setUnlocalizedName(name);
+        setRegistryName(name);
         this.setCreativeTab(CreativeTabs.TRANSPORTATION);
         setLightOpacity(255);
         this.setLightOpacity(0);
@@ -48,6 +52,10 @@ public class BlockWaypoint extends Block {
         this.setResistance(10F).setHardness(2.0F);
         this.setDefaultState(this.blockState.getBaseState().withProperty(TYPE, EnumType.BASE));
         this.fullBlock = false;
+
+
+        GameRegistry.register(this);
+        GameRegistry.register(new ItemWaypoint(this).setRegistryName(name).setHasSubtypes(true).setMaxDamage(0));
     }
 
     @Override
@@ -138,7 +146,7 @@ public class BlockWaypoint extends Block {
     }
 
     @Override
-    public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand, ItemStack heldItem, EnumFacing side, float hitX, float hitY, float hitZ) {
+    public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
         if (world.isRemote) return true;
         if (!isValid(world, pos)) return true;
         if (!isEntityOnWaypoint(world, pos, player)) return true;
@@ -237,7 +245,7 @@ public class BlockWaypoint extends Block {
                 Waypoint w = Waypoint.getWaypoint(src.linked_id - 1);
                 if (w == null) return;
 
-                BlockPos size = BlockWaypoint.checkSize(entity.worldObj, w.pos);
+                BlockPos size = BlockWaypoint.checkSize(entity.world, w.pos);
                 boolean teleported = false;
                 if (entity instanceof EntityPlayer || entity instanceof EntityLiving) {
                     if (entity.timeUntilPortal > 0 && entity.timeUntilPortal <= entity.getPortalCooldown()) {
@@ -266,10 +274,10 @@ public class BlockWaypoint extends Block {
     }
 
     @Override
-    public void neighborChanged(IBlockState state, World world, BlockPos pos, Block blockIn) {
-        Waypoint waypoint = Waypoint.getWaypoint(world, getCorner(world, pos));
+    public void observedNeighborChange(IBlockState observerState, World world, BlockPos observerPos, Block changedBlock, BlockPos changedBlockPos){
+        Waypoint waypoint = Waypoint.getWaypoint(world, getCorner(world, observerPos));
         if (waypoint == null) return;
-        BlockPos corner = getCorner(world, pos);
+        BlockPos corner = getCorner(world, observerPos);
         if (isPowered(world, corner)) {
             waypoint.powered = true;
             waypoint.changed = true;
@@ -300,7 +308,7 @@ public class BlockWaypoint extends Block {
     }
 
     @Override
-    public void getSubBlocks(Item itemIn, CreativeTabs tab, List list) {
+    public void getSubBlocks(Item itemIn, CreativeTabs tab, NonNullList<ItemStack> list) {
         list.add(new ItemStack(itemIn, 1, 0)); //Meta 0
     }
 

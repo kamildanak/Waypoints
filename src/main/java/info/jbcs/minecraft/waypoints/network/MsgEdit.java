@@ -42,7 +42,7 @@ public class MsgEdit extends AbstractMessage.AbstractServerMessage<MsgEdit> {
         Waypoint w = Waypoint.getWaypoint(waypointId);
         if (w == null) return;
 
-        if (!BlockWaypoint.isEntityOnWaypoint(player.worldObj, w.pos, player))
+        if (!BlockWaypoint.isEntityOnWaypoint(player.world, w.pos, player))
             return;
 
         w.name = name;
