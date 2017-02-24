@@ -1,25 +1,26 @@
 package info.jbcs.minecraft.waypoints;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Set;
 
 public class WaypointPlayerInfo {
-    static HashMap<String, WaypointPlayerInfo> objects = new HashMap<String, WaypointPlayerInfo>();
+    private static HashMap<String, WaypointPlayerInfo> objects = new HashMap<>();
     static File location;
 
-    public HashMap<Integer, Integer> discoveredWaypoints = new HashMap<Integer, Integer>();
-    String username;
-    boolean changed = false;
+    public HashMap<Integer, Integer> discoveredWaypoints = new HashMap<>();
+    private String username;
+    private boolean changed = false;
 
-    WaypointPlayerInfo(String n) {
+    private WaypointPlayerInfo(String n) {
         username = n.replaceAll("[^\\p{L}\\p{Nd}_]", "");
     }
 
@@ -29,6 +30,7 @@ public class WaypointPlayerInfo {
         if (info != null) return info;
 
         if (location == null) return null;
+        //noinspection ResultOfMethodCallIgnored
         location.mkdirs();
 
         info = new WaypointPlayerInfo(nn);
@@ -46,14 +48,14 @@ public class WaypointPlayerInfo {
         return info;
     }
 
-    public static void writeAll() throws IOException {
+    static void writeAll() throws IOException {
         for (WaypointPlayerInfo info : objects.values()) {
             if (info.changed)
                 info.write(info.getFile());
         }
     }
 
-    File getFile() {
+    private File getFile() {
         return new File(location, username + ".dat");
     }
 
@@ -72,41 +74,40 @@ public class WaypointPlayerInfo {
     private void read(File file) throws IOException {
         changed = false;
         discoveredWaypoints.clear();
+        int count = 0;
 
-        byte[] bytes = Files.readAllBytes(file.toPath());
-        ByteBuf buffer = Unpooled.buffer();
-        buffer.writeBytes(bytes);
-        NBTTagCompound tag = ByteBufUtils.readTag(buffer);
-
-        int count = tag.getInteger("count");
-        for (int i = 0; i < count; i++) {
-            int id = tag.getInteger("" + i);
-            addWaypoint(id);
+        JsonParser jsonParser = new JsonParser();
+        try {
+            JsonArray jsonArray = jsonParser.parse(new FileReader(file)).getAsJsonArray();
+            for (JsonElement jsonWaypoint : jsonArray)
+            {
+                int id = jsonWaypoint.getAsJsonObject().get("id").getAsInt();
+                addWaypoint(id);
+                count++;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         Waypoints.log("User " + username + " read about " + count + " Waypoints");
     }
 
     private void write(File file) throws IOException {
-        int index = 0;
-
-
-        NBTTagCompound tag = new NBTTagCompound();
+        JsonArray jsonArray = new JsonArray();
         Set<Integer> keys = discoveredWaypoints.keySet();
-        tag.setInteger("count", keys.size());
         for (Integer id : keys) {
-            tag.setInteger("" + (index++), id);
+            JsonObject obj = new JsonObject();
+            obj.addProperty("id", id);
+            jsonArray.add(obj);
         }
-        ByteBuf buffer = Unpooled.buffer();
-        ByteBufUtils.writeTag(buffer, tag);
-        byte[] bytes = new byte[buffer.readableBytes()];
-        buffer.readBytes(bytes);
-        Files.write(file.toPath(), bytes);
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            String str = jsonArray.toString();
+            fileWriter.write(str);
+        }
         Waypoints.log("User " + username + " wrote down about " + keys.size() + " Waypoints");
-
         changed = false;
     }
 
-    public static void clear() {
+    static void clear() {
         WaypointPlayerInfo.location = null;
         WaypointPlayerInfo.objects.clear();
     }

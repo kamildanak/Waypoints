@@ -1,22 +1,25 @@
 package info.jbcs.minecraft.waypoints;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Waypoint {
-    public static ArrayList<Waypoint> existingWaypoints = new ArrayList<Waypoint>();
+    public static ArrayList<Waypoint> existingWaypoints = new ArrayList<>();
     public static boolean changed;
-    private static HashMap<String, Waypoint> waypointsLocationMap = new HashMap<String, Waypoint>();
+    private static HashMap<String, Waypoint> waypointsLocationMap = new HashMap<>();
     private static Waypoint waypoints[] = new Waypoint[0x400];
     private static int nextId = 0;
     public int id;
@@ -38,11 +41,16 @@ public class Waypoint {
     }
 
     public Waypoint(ByteBuf stream) throws IOException {
-        id = -1;
+        this();
         read(stream);
     }
 
-    public static String locKey(BlockPos pos, int dimension) {
+    public Waypoint(JsonObject jsonObject) throws IOException {
+        this();
+        read(jsonObject);
+    }
+
+    private static String locKey(BlockPos pos, int dimension) {
         return pos.getX() + "|" + pos.getY() + "|" + pos.getZ() + ":" + dimension;
     }
 
@@ -104,42 +112,63 @@ public class Waypoint {
         if (!changed) return;
         changed = false;
 
-        int index = 0;
-        NBTTagCompound tag = new NBTTagCompound();
-        tag.setInteger("count", existingWaypoints.size());
+        JsonArray jsonArray = new JsonArray();
         for (Waypoint w : existingWaypoints) {
-            NBTTagCompound wtag = new NBTTagCompound();
-            w.write(wtag);
-            tag.setTag("" + (index++), wtag);
+            JsonObject jsonObject = new JsonObject();
+            w.write(jsonObject);
+            jsonArray.add(jsonObject);
             System.out.println(w.pos.getX() + "_" + w.pos.getY() + "_" + w.pos.getZ());
         }
 
-        ByteBuf buffer = Unpooled.buffer();
-        ByteBufUtils.writeTag(buffer, tag);
-        byte[] bytes = new byte[buffer.readableBytes()];
-        buffer.readBytes(bytes);
-        Files.write(file.toPath(), bytes);
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            String str = jsonArray.toString();
+            fileWriter.write(str);
+        }
     }
 
     public static void read(File file) throws IOException {
         existingWaypoints.clear();
         waypointsLocationMap.clear();
-        nextId = 0;
         waypoints = new Waypoint[0x400];
         changed = false;
+        nextId = 0;
 
-        byte[] bytes = Files.readAllBytes(file.toPath());
-
-        ByteBuf buffer = Unpooled.buffer();
-        buffer.writeBytes(bytes);
-        NBTTagCompound tag = ByteBufUtils.readTag(buffer);
-
-        int count = tag.getInteger("count");
-        for (int i = 0; i < count; i++) {
-            Waypoint w = new Waypoint();
-            w.read(tag.getCompoundTag("" + i));
-            if (nextId <= w.id) nextId = w.id + 1;
+        JsonParser jsonParser = new JsonParser();
+        try {
+            JsonArray jsonArray = jsonParser.parse(new FileReader(file)).getAsJsonArray();
+            for (JsonElement jsonWaypoint : jsonArray)
+            {
+                Waypoint w = new Waypoint(jsonWaypoint.getAsJsonObject());
+                if (nextId <= w.id) nextId = w.id + 1;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+    }
+
+    public void write(JsonObject jsonObject) throws IOException {
+        jsonObject.addProperty("id", id);
+        jsonObject.addProperty("x", pos.getX());
+        jsonObject.addProperty("y", pos.getY());
+        jsonObject.addProperty("z", pos.getZ());
+        jsonObject.addProperty("dimension", dimension);
+        jsonObject.addProperty("name", name);
+        jsonObject.addProperty("linked_id", linked_id);
+        jsonObject.addProperty("powered", powered);
+    }
+
+    private void read(JsonObject jsonObject) throws IOException {
+        if (id != -1) return;
+
+        initialize(jsonObject.get("id").getAsInt(),
+                new BlockPos(jsonObject.get("x").getAsInt(),
+                        jsonObject.get("y").getAsInt(),
+                        jsonObject.get("z").getAsInt()),
+                jsonObject.get("dimension").getAsInt());
+
+        name = jsonObject.get("name").getAsString();
+        linked_id = jsonObject.get("linked_id").getAsInt();
+        powered = jsonObject.get("powered").getAsBoolean();
     }
 
     public void write(ByteBuf stream) throws IOException {
@@ -153,7 +182,7 @@ public class Waypoint {
         stream.writeBoolean(powered);
     }
 
-    void read(ByteBuf stream) throws IOException {
+    private void read(ByteBuf stream) throws IOException {
         if (id != -1) return;
 
         id = stream.readInt();
@@ -164,29 +193,7 @@ public class Waypoint {
         powered = stream.readBoolean();
     }
 
-    void write(NBTTagCompound tag) {
-        tag.setInteger("id", id);
-        tag.setInteger("x", pos.getX());
-        tag.setInteger("y", pos.getY());
-        tag.setInteger("z", pos.getZ());
-        tag.setInteger("dim", dimension);
-        tag.setString("name", name);
-        tag.setInteger("linked_id", linked_id);
-        tag.setBoolean("powered", powered);
-    }
-
-    void read(NBTTagCompound tag) {
-        if (id != -1) return;
-
-        initialize(tag.getInteger("id"), new BlockPos(tag.getInteger("x"), tag.getInteger("y"), tag.getInteger("z")),
-                tag.getInteger("dim"));
-
-        name = tag.getString("name");
-        linked_id = tag.getInteger("linked_id");
-        powered = tag.getBoolean("powered");
-    }
-
-    void initialize(int id, BlockPos pos, int dimension) {
+    private void initialize(int id, BlockPos pos, int dimension) {
         String key = locKey(pos, dimension);
 
         this.id = id;
@@ -198,7 +205,7 @@ public class Waypoint {
         changed = true;
     }
 
-    public static void clear() {
+    static void clear() {
         existingWaypoints.clear();
         waypointsLocationMap.clear();
         nextId = 0;
