@@ -116,7 +116,7 @@ public class Waypoints {
         File file = loadedWorldDir;
         if (file == null) return;
         try {
-            Waypoint.write(new File(file, "waypoints.dat"));
+            Waypoint.write(new File(file, "waypoints.json"));
             WaypointPlayerInfo.writeAll();
             Waypoints.log("Saving waypoints data seems successful");
         } catch (IOException e) {
@@ -137,7 +137,7 @@ public class Waypoints {
         loadedWorldDir = file;
 
         WaypointPlayerInfo.location = new File(file, "waypoints-discovery");
-        File waypointsLocation = new File(file, "waypoints.dat");
+        File waypointsLocation = new File(file, "waypoints.json");
 
         if (!waypointsLocation.exists()) return;
 

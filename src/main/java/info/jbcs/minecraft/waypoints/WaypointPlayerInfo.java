@@ -56,7 +56,7 @@ public class WaypointPlayerInfo {
     }
 
     private File getFile() {
-        return new File(location, username + ".dat");
+        return new File(location, username + ".json");
     }
 
     public void addWaypoint(int id) {
