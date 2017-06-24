@@ -9,7 +9,6 @@ import info.jbcs.minecraft.waypoints.network.*;
 import net.minecraft.block.Block;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.properties.PropertyEnum;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
@@ -19,7 +18,6 @@ import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.*;
@@ -28,10 +26,9 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
-import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.common.registry.ForgeRegistries;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 import static info.jbcs.minecraft.waypoints.General.isOP;
@@ -40,9 +37,8 @@ public class BlockWaypoint extends Block {
 
     public static final PropertyEnum TYPE = PropertyEnum.create("type", EnumType.class);
 
-    public BlockWaypoint() {
+    public BlockWaypoint(String name) {
         super(Material.ROCK);
-        String name = "waypoint";
         setUnlocalizedName(name);
         setRegistryName(name);
         this.setCreativeTab(CreativeTabs.TRANSPORTATION);
@@ -53,19 +49,9 @@ public class BlockWaypoint extends Block {
         this.setDefaultState(this.blockState.getBaseState().withProperty(TYPE, EnumType.BASE));
         this.fullBlock = false;
 
-
-        GameRegistry.register(this);
-        GameRegistry.register(new ItemWaypoint(this).setRegistryName(name).setHasSubtypes(true).setMaxDamage(0));
-    }
-
-    @Override
-    public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos) {
-        return new AxisAlignedBB(0.0F, 0.0F, 0.0F, 1.0F, 0.5F, 1.0F);
-    }
-
-    @Override
-    public SoundType getSoundType() {
-        return Blocks.STONE.getSoundType();
+        ForgeRegistries.BLOCKS.register(this);
+        ItemWaypoint itemWaypoint = new ItemWaypoint(this, name);
+        ForgeRegistries.ITEMS.register(itemWaypoint);
     }
 
     /* Function returns corner that is saved to Waypoints database */
@@ -94,6 +80,16 @@ public class BlockWaypoint extends Block {
         BlockPos c1 = getCorner(world, pos, -1, 0, -1);
         BlockPos c2 = getCorner(world, pos, 1, 0, 1);
         return new BlockPos(c2.getX() - c1.getX() + 1, 0, c2.getZ() - c1.getZ() + 1);
+    }
+
+    @Override
+    public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos) {
+        return new AxisAlignedBB(0.0F, 0.0F, 0.0F, 1.0F, 0.5F, 1.0F);
+    }
+
+    @Override
+    public SoundType getSoundType() {
+        return Blocks.STONE.getSoundType();
     }
 
     public boolean isValid(World world, BlockPos pos) {
@@ -253,7 +249,7 @@ public class BlockWaypoint extends Block {
                     } else if (entity.timeUntilPortal > entity.getPortalCooldown() && entity.timeUntilPortal < 2 * entity.getPortalCooldown()) {
                         MinecraftServer minecraftServer = world.getMinecraftServer();
                         entity.timeUntilPortal = entity.getPortalCooldown();
-                        teleported = new WaypointTeleporter(minecraftServer.worldServerForDimension(world.provider.getDimension())).teleport(entity, world, w);
+                        teleported = new WaypointTeleporter(minecraftServer.getWorld(world.provider.getDimension())).teleport(entity, world, w);
                     } else if (src.powered && entity instanceof EntityPlayer && entity.timeUntilPortal == 0) {
                         entity.timeUntilPortal = 2 * entity.getPortalCooldown() + 20;
                     } else if (src.powered && entity.timeUntilPortal == 0) {
@@ -280,10 +276,10 @@ public class BlockWaypoint extends Block {
         BlockPos corner = getCorner(world, observerPos);
         if (isPowered(world, corner)) {
             waypoint.powered = true;
-            waypoint.changed = true;
+            Waypoint.changed = true;
         } else {
             waypoint.powered = false;
-            waypoint.changed = true;
+            Waypoint.changed = true;
         }
     }
 
@@ -308,18 +304,18 @@ public class BlockWaypoint extends Block {
     }
 
     @Override
-    public void getSubBlocks(Item itemIn, CreativeTabs tab, NonNullList<ItemStack> list) {
-        list.add(new ItemStack(itemIn, 1, 0)); //Meta 0
+    public void getSubBlocks(CreativeTabs itemIn, NonNullList<ItemStack> items) {
+        items.add(new ItemStack(this, 1, 0)); //Meta 0
     }
 
     @Override
     protected BlockStateContainer createBlockState() {
-        return new BlockStateContainer(this, new IProperty[]{TYPE});
+        return new BlockStateContainer(this, TYPE);
     }
 
     public int getMetaFromState(IBlockState state) {
         int meta = 0;
-        return (int) ((EnumType) state.getValue(TYPE)).getID();
+        return ((EnumType) state.getValue(TYPE)).getID();
     }
 
     public IBlockState getStateFromMeta(int meta) {
@@ -341,7 +337,7 @@ public class BlockWaypoint extends Block {
         private int ID;
         private String name;
 
-        private EnumType(int ID, String name) {
+        EnumType(int ID, String name) {
             this.ID = ID;
             this.name = name;
         }

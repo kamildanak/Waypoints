@@ -27,7 +27,7 @@ public class Proxy {
      * Returns a side-appropriate EntityPlayer for use during message handling
      */
     public EntityPlayer getPlayerEntity(MessageContext ctx) {
-        return ctx.getServerHandler().playerEntity;
+        return ctx.getServerHandler().player;
     }
 
     /**
@@ -35,6 +35,6 @@ public class Proxy {
      * used for ensuring that the message is being handled by the main thread
      */
     public IThreadListener getThreadFromContext(MessageContext ctx) {
-        return ctx.getServerHandler().playerEntity.getServer();
+        return ctx.getServerHandler().player.getServer();
     }
 }

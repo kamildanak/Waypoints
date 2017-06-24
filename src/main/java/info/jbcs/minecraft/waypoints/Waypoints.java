@@ -2,13 +2,9 @@ package info.jbcs.minecraft.waypoints;
 
 import info.jbcs.minecraft.waypoints.block.BlockWaypoint;
 import info.jbcs.minecraft.waypoints.gui.GuiHandler;
-import info.jbcs.minecraft.waypoints.item.ItemWaypoint;
 import info.jbcs.minecraft.waypoints.proxy.Proxy;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
 import net.minecraft.init.SoundEvents;
-import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.ResourceLocation;
@@ -22,20 +18,19 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.*;
+import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
 
-import static net.minecraftforge.fml.common.registry.GameRegistry.addRecipe;
-
 @Mod(modid = Waypoints.MODID, name = Waypoints.MODNAME, version = Waypoints.VERSION,
-        acceptedMinecraftVersions = "[1.11,1.11.2]")
+        acceptedMinecraftVersions = "[1.12]")
 public class Waypoints {
     public static final String MODID = "waypoints";
     public static final String MODNAME = "waypoints";
-    public static final String VERSION = "1.11.2-1.2.2";
+    public static final String VERSION = "1.12-1.2.4";
     public static boolean compactView;
     public static boolean craftable;
     public static boolean allowActivation;
@@ -53,16 +48,19 @@ public class Waypoints {
     public static CreativeTabs tabWaypoints;
     @SidedProxy(clientSide = "info.jbcs.minecraft.waypoints.proxy.ProxyClient", serverSide = "info.jbcs.minecraft.waypoints.proxy.Proxy")
     public static Proxy proxy;
-    static Configuration config;
-    private File loadedWorldDir;
-
     public static PotionEffect potionEffects[];
     public static int potionEffectsChances[];
     public static int teleportationExhaustion;
     public static SoundEvent soundEvent;
+    static Configuration config;
     private static Logger logger;
+    private File loadedWorldDir;
 
     public Waypoints() {
+    }
+
+    public static void log(String message) {
+        if (logEvents) logger.info(message);
     }
 
     @EventHandler
@@ -70,6 +68,7 @@ public class Waypoints {
         config = new Configuration(event.getSuggestedConfigurationFile());
         config.load();
         proxy.preInit();
+        blockWaypoint = new BlockWaypoint("waypoint");
     }
 
     @EventHandler
@@ -78,21 +77,15 @@ public class Waypoints {
         Waypoints.log("Hello");
         tabWaypoints = CreativeTabs.DECORATIONS;
 
-        blockWaypoint = new BlockWaypoint();
         proxy.init();
         loadConfigOptions();
-
-        if (craftable)
-            addRecipe(new ItemStack(blockWaypoint, 1), "SSS", "SES", 'S', Blocks.STONE, 'E', Items.ENDER_PEARL);
-
 
         if (playSoundEnderman)
             soundEvent = SoundEvents.ENTITY_ENDERMEN_TELEPORT;
         else {
-            int soundEventId = SoundEvent.REGISTRY.getKeys().size();
-            ResourceLocation resourcelocation = new ResourceLocation(MODID, "waypoints.sound.teleport");
-            SoundEvent.REGISTRY.register(soundEventId++, resourcelocation, new SoundEvent(resourcelocation));
-            soundEvent = (SoundEvent) SoundEvent.REGISTRY.getObject(resourcelocation);
+            soundEvent = new SoundEvent(new ResourceLocation(MODID, "waypoints.sound.teleport"));
+            soundEvent.setRegistryName("waypoints.sound.teleport");
+            ForgeRegistries.SOUND_EVENTS.register(soundEvent);
         }
         //
         MinecraftForge.EVENT_BUS.register(this);
@@ -108,7 +101,7 @@ public class Waypoints {
     public File getWorldDir(World world) {
         ISaveHandler handler = world.getSaveHandler();
         if (!(handler instanceof SaveHandler)) return null;
-        return ((SaveHandler) handler).getWorldDirectory();
+        return handler.getWorldDirectory();
     }
 
     @EventHandler
@@ -148,10 +141,6 @@ public class Waypoints {
             e.printStackTrace();
             Waypoints.log("Error loading waypoints data");
         }
-    }
-
-    public static void log(String message) {
-        if (logEvents) logger.info(message);
     }
 
     private void loadConfigOptions()

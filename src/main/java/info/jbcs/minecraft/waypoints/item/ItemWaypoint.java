@@ -17,9 +17,11 @@ import net.minecraft.world.World;
 public class ItemWaypoint extends ItemBlock {
     Block blockWaypoint;
 
-    public ItemWaypoint(Block block) {
+    public ItemWaypoint(Block block, String name) {
         super(block);
         blockWaypoint = block;
+        this.setHasSubtypes(true).setMaxDamage(0);
+        setItemName(name);
     }
 
     @Override
@@ -73,4 +75,8 @@ public class ItemWaypoint extends ItemBlock {
         return world.getBlockState(pos).getBlock().getMetaFromState(world.getBlockState(pos)) != 0 && world.getBlockState(pos).getBlock() == blockWaypoint;
     }
 
+    private void setItemName(String name) {
+        this.setRegistryName(name);
+        this.setUnlocalizedName(this.getRegistryName().toString());
+    }
 }

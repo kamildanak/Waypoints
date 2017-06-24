@@ -28,7 +28,7 @@ public class WaypointTeleporter extends Teleporter {
         if (entity instanceof EntityPlayerMP) {
             EntityPlayerMP thePlayer = (EntityPlayerMP) entity;
             if (thePlayer.dimension != dim) {
-                mcServer.getPlayerList().transferPlayerToDimension(thePlayer, dim, new WaypointTeleporter(mcServer.worldServerForDimension(dim)));
+                mcServer.getPlayerList().transferPlayerToDimension(thePlayer, dim, new WaypointTeleporter(mcServer.getWorld(dim)));
             }
             BlockPos size = BlockWaypoint.checkSize(thePlayer.world, w.pos);
             double x = w.pos.getX() + size.getX() / 2.0;
@@ -60,8 +60,8 @@ public class WaypointTeleporter extends Teleporter {
         if (!entityIn.world.isRemote && !entityIn.isDead) {
             MinecraftServer minecraftserver = FMLCommonHandler.instance().getMinecraftServerInstance();
             int j = entityIn.dimension;
-            WorldServer wsOld = minecraftserver.worldServerForDimension(j);
-            WorldServer wsNew = minecraftserver.worldServerForDimension(dim);
+            WorldServer wsOld = minecraftserver.getWorld(j);
+            WorldServer wsNew = minecraftserver.getWorld(dim);
             WorldProvider pOld = wsOld.provider;
             WorldProvider pNew = wsNew.provider;
             double moveFactor = pOld.getMovementFactor() / pNew.getMovementFactor();
@@ -69,7 +69,7 @@ public class WaypointTeleporter extends Teleporter {
             double d1 = entityIn.posZ * moveFactor;
             double d2 = 8.0D;
             float f = entityIn.rotationYaw;
-            wsOld.theProfiler.startSection("moving");
+            wsOld.profiler.startSection("moving");
             if (entityIn.dimension == 1) {
                 BlockPos size = BlockWaypoint.checkSize(wsNew, w.pos);
                 double x = w.pos.getX() + size.getX() / 2.0;
@@ -87,9 +87,9 @@ public class WaypointTeleporter extends Teleporter {
                 }
             }
 
-            wsOld.theProfiler.endSection();
+            wsOld.profiler.endSection();
             if (j != 1) {
-                wsOld.theProfiler.startSection("placing");
+                wsOld.profiler.startSection("placing");
                 BlockPos size = BlockWaypoint.checkSize(wsNew, w.pos);
                 double x = w.pos.getX() + size.getX() / 2.0;
                 double y = w.pos.getY() + 0.5;
@@ -108,7 +108,7 @@ public class WaypointTeleporter extends Teleporter {
                     wsNew.updateEntityWithOptionalForce(entityIn, false);
                 }
 
-                wsOld.theProfiler.endSection();
+                wsOld.profiler.endSection();
             }
 
             entityIn.setWorld(wsNew);

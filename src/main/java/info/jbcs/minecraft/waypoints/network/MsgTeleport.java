@@ -8,7 +8,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.potion.PotionEffect;
-import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
@@ -24,8 +23,8 @@ public class MsgTeleport extends AbstractMessage.AbstractServerMessage<MsgTelepo
     }
 
     public MsgTeleport(int src, int dest) {
-        this.srcID = src;
-        this.destID = dest;
+        srcID = src;
+        destID = dest;
     }
 
     @Override
@@ -55,7 +54,7 @@ public class MsgTeleport extends AbstractMessage.AbstractServerMessage<MsgTelepo
 
         if (player.dimension != dest.dimension)
             player.world.getMinecraftServer().getPlayerList().transferPlayerToDimension((EntityPlayerMP) player, dest.dimension,
-                    new WaypointTeleporter(FMLCommonHandler.instance().getMinecraftServerInstance().worldServerForDimension(dest.dimension)));
+                    new WaypointTeleporter(FMLCommonHandler.instance().getMinecraftServerInstance().getWorld(dest.dimension)));
         BlockPos size = BlockWaypoint.checkSize(player.world, dest.pos);
         player.setLocationAndAngles(dest.pos.getX() + size.getX() / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size.getZ() / 2.0, player.rotationYaw, 0);
         player.setPositionAndUpdate(dest.pos.getX() + size.getX() / 2.0, dest.pos.getY() + 0.5, dest.pos.getZ() + size.getZ() / 2.0);
