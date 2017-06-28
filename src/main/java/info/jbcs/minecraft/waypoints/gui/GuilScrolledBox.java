@@ -1,5 +1,7 @@
 package info.jbcs.minecraft.waypoints.gui;
 
+import com.kamildanak.minecraft.foamflower.gui.elements.GuiElement;
+import com.kamildanak.minecraft.foamflower.gui.input.InputMouseEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -12,12 +14,20 @@ public class GuilScrolledBox extends GuiElement {
     public int offset = 0;
     int contentHeight = 0;
     int scrollingStart = -1;
-    int x0, x1;
+    int x;
+    int y;
+    int w;
+    int h;
 
     public GuilScrolledBox(int x, int y, int w, int h) {
         super(x, y, w, h);
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
     }
 
+    //TODO: fix background | rewrite Waypoint selection
     protected void overlayBackground(int start, int end, int color, int a1, int a2) {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferBuilder = tessellator.getBuffer();
@@ -33,10 +43,10 @@ public class GuilScrolledBox extends GuiElement {
 
         bufferBuilder.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
 
-        bufferBuilder.pos(x0, end, 0.0D).tex(0.0D, end / f).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(x1, end, 0.0D).tex(gui.width / f, end / f).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(x1, start, 0.0D).tex(gui.width / f, start / f).color(r, g, b, a).endVertex();
-        bufferBuilder.pos(x0, start, 0.0D).tex(0.0D, start / f).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(0, end, 0.0D).tex(0.0D, end / f).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(getWidth(), end, 0.0D).tex(getWidth() / f, end / f).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(getWidth(), start, 0.0D).tex(getWidth() / f, start / f).color(r, g, b, a).endVertex();
+        bufferBuilder.pos(0, start, 0.0D).tex(0.0D, start / f).color(r, g, b, a).endVertex();
 
         tessellator.draw();
     }
@@ -56,8 +66,6 @@ public class GuilScrolledBox extends GuiElement {
     public void render() {
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
         Minecraft.getMinecraft().getTextureManager().bindTexture(Gui.OPTIONS_BACKGROUND);
-        x0 = -gui.screenX;
-        x1 = -gui.screenX + gui.width;
 
         overlayBackground(y, h, 0x202020, 0xff, 0xff);
 
@@ -77,10 +85,16 @@ public class GuilScrolledBox extends GuiElement {
         GL11.glShadeModel(GL11.GL_FLAT);
         GL11.glEnable(GL11.GL_ALPHA_TEST);
         GL11.glDisable(GL11.GL_BLEND);
+    }
 
-        Minecraft.getMinecraft().getTextureManager().bindTexture(Gui.OPTIONS_BACKGROUND);
-        overlayBackground(-gui.screenY, y, 0x404040, 0xff, 0xff);
-        overlayBackground(h, -gui.screenY + gui.height, 0x404040, 0xff, 0xff);
+    @Override
+    public int getHeight() {
+        return h;
+    }
+
+    @Override
+    public int getWidth() {
+        return w;
     }
 
     @Override

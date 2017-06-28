@@ -1,8 +1,11 @@
 package info.jbcs.minecraft.waypoints.gui;
 
+import com.kamildanak.minecraft.foamflower.gui.GuiScreenPlus;
+import com.kamildanak.minecraft.foamflower.gui.elements.GuiExButton;
 import info.jbcs.minecraft.waypoints.Waypoint;
 import info.jbcs.minecraft.waypoints.Waypoints;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiButton;
 import org.lwjgl.opengl.GL11;
 
@@ -72,6 +75,7 @@ public class GuiPickWaypoint extends GuiScreenPlus {
         GL11.glPushMatrix();
         GL11.glTranslatef(screenX, screenY, 0);
         root.render();
+        Minecraft.getMinecraft().getTextureManager().bindTexture(Gui.OPTIONS_BACKGROUND);
         GL11.glPopMatrix();
 
         drawCenteredStringWithShadow("Waypoints", screenX + 114, screenY + 12, 0xffffffff);

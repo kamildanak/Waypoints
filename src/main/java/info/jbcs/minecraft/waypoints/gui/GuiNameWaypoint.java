@@ -1,6 +1,9 @@
 package info.jbcs.minecraft.waypoints.gui;
 
-import info.jbcs.minecraft.waypoints.Waypoint;
+import com.kamildanak.minecraft.foamflower.gui.GuiScreenPlus;
+import com.kamildanak.minecraft.foamflower.gui.elements.GuiEdit;
+import com.kamildanak.minecraft.foamflower.gui.elements.GuiExButton;
+import com.kamildanak.minecraft.foamflower.gui.elements.GuiLabel;
 import info.jbcs.minecraft.waypoints.network.MsgName;
 import info.jbcs.minecraft.waypoints.network.PacketDispatcher;
 import net.minecraft.util.math.BlockPos;

@@ -1,5 +1,9 @@
 package info.jbcs.minecraft.waypoints.gui;
 
+import com.kamildanak.minecraft.foamflower.gui.GuiScreenPlus;
+import com.kamildanak.minecraft.foamflower.gui.elements.GuiEdit;
+import com.kamildanak.minecraft.foamflower.gui.elements.GuiExButton;
+import com.kamildanak.minecraft.foamflower.gui.elements.GuiLabel;
 import info.jbcs.minecraft.waypoints.Waypoint;
 import info.jbcs.minecraft.waypoints.network.MsgEdit;
 import info.jbcs.minecraft.waypoints.network.PacketDispatcher;
@@ -65,11 +69,11 @@ public class GuiEditWaypoint extends GuiScreenPlus {
             String name = Waypoint.getWaypoint(linkedId - 1).name;
             if (name.length() > 16)
                 name = name.substring(0, 13) + "...";
-            select_button.caption = name;
+            select_button.setCaption(name);
 
         } else {
             linkedId = 0;
-            select_button.caption = "None selected";
+            select_button.setCaption("None selected");
         }
     }
 

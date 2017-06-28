@@ -1,7 +1,7 @@
 package info.jbcs.minecraft.waypoints;
 
+import com.kamildanak.minecraft.foamflower.gui.GuiHandler;
 import info.jbcs.minecraft.waypoints.block.BlockWaypoint;
-import info.jbcs.minecraft.waypoints.gui.GuiHandler;
 import info.jbcs.minecraft.waypoints.proxy.Proxy;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.init.SoundEvents;
