@@ -4,7 +4,8 @@ import info.jbcs.minecraft.waypoints.Waypoint;
 import info.jbcs.minecraft.waypoints.WaypointPlayerInfo;
 import info.jbcs.minecraft.waypoints.WaypointTeleporter;
 import info.jbcs.minecraft.waypoints.Waypoints;
-import info.jbcs.minecraft.waypoints.item.ItemWaypoint;
+import info.jbcs.minecraft.waypoints.init.WaypointsBlocks;
+import info.jbcs.minecraft.waypoints.init.WaypointsSoundEvents;
 import info.jbcs.minecraft.waypoints.network.*;
 import net.minecraft.block.Block;
 import net.minecraft.block.SoundType;
@@ -26,7 +27,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -48,10 +48,6 @@ public class BlockWaypoint extends Block {
         this.setResistance(10F).setHardness(2.0F);
         this.setDefaultState(this.blockState.getBaseState().withProperty(TYPE, EnumType.BASE));
         this.fullBlock = false;
-
-        ForgeRegistries.BLOCKS.register(this);
-        ItemWaypoint itemWaypoint = new ItemWaypoint(this, name);
-        ForgeRegistries.ITEMS.register(itemWaypoint);
     }
 
     /* Function returns corner that is saved to Waypoints database */
@@ -62,11 +58,11 @@ public class BlockWaypoint extends Block {
     /* Function returns corner of structure that block in position given as argument assuming that it is a rectangle. */
     static private BlockPos getCorner(World world, BlockPos pos, int x, int y, int z) {
         if (x != 0)
-            while (world.getBlockState(pos.add(x, 0, 0)).getBlock() == Waypoints.blockWaypoint) pos = pos.add(x, 0, 0);
+            while (world.getBlockState(pos.add(x, 0, 0)).getBlock() == WaypointsBlocks.WAYPOINT) pos = pos.add(x, 0, 0);
         if (y != 0)
-            while (world.getBlockState(pos.add(0, y, 0)).getBlock() == Waypoints.blockWaypoint) pos = pos.add(0, y, 0);
+            while (world.getBlockState(pos.add(0, y, 0)).getBlock() == WaypointsBlocks.WAYPOINT) pos = pos.add(0, y, 0);
         if (z != 0)
-            while (world.getBlockState(pos.add(0, 0, z)).getBlock() == Waypoints.blockWaypoint) pos = pos.add(0, 0, z);
+            while (world.getBlockState(pos.add(0, 0, z)).getBlock() == WaypointsBlocks.WAYPOINT) pos = pos.add(0, 0, z);
         return pos;
     }
 
@@ -101,15 +97,15 @@ public class BlockWaypoint extends Block {
         // check if all blocks in rectangle are correct type
         for (int px = 0; px < size.getX(); px++)
             for (int pz = 0; pz < size.getZ(); pz++)
-                if (!(world.getBlockState(c1.add(px, 0, pz)).getBlock() == Waypoints.blockWaypoint)) return false;
+                if (!(world.getBlockState(c1.add(px, 0, pz)).getBlock() == WaypointsBlocks.WAYPOINT)) return false;
         // check sides
         for (int px = 0; px < size.getX(); px++) {
-            if (world.getBlockState(c1.add(px, 0, -1)).getBlock() == Waypoints.blockWaypoint) return false;
-            if (world.getBlockState(c1.add(px, 0, size.getZ())).getBlock() == Waypoints.blockWaypoint) return false;
+            if (world.getBlockState(c1.add(px, 0, -1)).getBlock() == WaypointsBlocks.WAYPOINT) return false;
+            if (world.getBlockState(c1.add(px, 0, size.getZ())).getBlock() == WaypointsBlocks.WAYPOINT) return false;
         }
         for (int pz = 0; pz < size.getZ(); pz++) {
-            if (world.getBlockState(c1.add(-1, 0, pz)).getBlock() == Waypoints.blockWaypoint) return false;
-            if (world.getBlockState(c1.add(size.getX(), 0, pz)).getBlock() == Waypoints.blockWaypoint) return false;
+            if (world.getBlockState(c1.add(-1, 0, pz)).getBlock() == WaypointsBlocks.WAYPOINT) return false;
+            if (world.getBlockState(c1.add(size.getX(), 0, pz)).getBlock() == WaypointsBlocks.WAYPOINT) return false;
         }
         return true;
     }
@@ -119,26 +115,26 @@ public class BlockWaypoint extends Block {
         super.breakBlock(world, pos, oldBlock);
         BlockPos c1a = pos, c1b = pos, c2a = pos, c2b = pos, c1, c2;
         int x = -1, z = -1;
-        while (world.getBlockState(c1a.add(x, 0, 0)).getBlock() == Waypoints.blockWaypoint) c1a = c1a.add(x, 0, 0);
-        while (world.getBlockState(c1a.add(0, 0, z)).getBlock() == Waypoints.blockWaypoint) c1a = c1a.add(0, 0, z);
-        while (world.getBlockState(c1b.add(0, 0, z)).getBlock() == Waypoints.blockWaypoint) c1b = c1b.add(0, 0, z);
-        while (world.getBlockState(c1b.add(x, 0, 0)).getBlock() == Waypoints.blockWaypoint) c1b = c1b.add(x, 0, 0);
+        while (world.getBlockState(c1a.add(x, 0, 0)).getBlock() == WaypointsBlocks.WAYPOINT) c1a = c1a.add(x, 0, 0);
+        while (world.getBlockState(c1a.add(0, 0, z)).getBlock() == WaypointsBlocks.WAYPOINT) c1a = c1a.add(0, 0, z);
+        while (world.getBlockState(c1b.add(0, 0, z)).getBlock() == WaypointsBlocks.WAYPOINT) c1b = c1b.add(0, 0, z);
+        while (world.getBlockState(c1b.add(x, 0, 0)).getBlock() == WaypointsBlocks.WAYPOINT) c1b = c1b.add(x, 0, 0);
         c1 = new BlockPos(Math.min(c1a.getX(), c1b.getX()), c1a.getY(), Math.min(c1a.getZ(), c1b.getZ()));
         if (!Waypoint.isWaypoint(world, c1)) return;
         Waypoint wp = Waypoint.getWaypoint(world, c1);
         if (wp != null) Waypoint.removeWaypoint(wp);
         x = 1;
         z = 1;
-        while (world.getBlockState(c2a.add(x, 0, 0)).getBlock() == Waypoints.blockWaypoint) c2a = c2a.add(x, 0, 0);
-        while (world.getBlockState(c2a.add(0, 0, z)).getBlock() == Waypoints.blockWaypoint) c2a = c2a.add(0, 0, z);
-        while (world.getBlockState(c2b.add(0, 0, z)).getBlock() == Waypoints.blockWaypoint) c2b = c2b.add(0, 0, z);
-        while (world.getBlockState(c2b.add(x, 0, 0)).getBlock() == Waypoints.blockWaypoint) c2b = c2b.add(x, 0, 0);
+        while (world.getBlockState(c2a.add(x, 0, 0)).getBlock() == WaypointsBlocks.WAYPOINT) c2a = c2a.add(x, 0, 0);
+        while (world.getBlockState(c2a.add(0, 0, z)).getBlock() == WaypointsBlocks.WAYPOINT) c2a = c2a.add(0, 0, z);
+        while (world.getBlockState(c2b.add(0, 0, z)).getBlock() == WaypointsBlocks.WAYPOINT) c2b = c2b.add(0, 0, z);
+        while (world.getBlockState(c2b.add(x, 0, 0)).getBlock() == WaypointsBlocks.WAYPOINT) c2b = c2b.add(x, 0, 0);
         c2 = new BlockPos(Math.max(c2a.getX(), c2b.getX()), c2a.getY(), Math.max(c2a.getZ(), c2b.getZ()));
         BlockPos size = new BlockPos(c2.getX() - c1.getX() + 1, 0, c2.getZ() - c1.getZ() + 1);
         for (int px = 0; px < size.getX(); px++)
             for (int pz = 0; pz < size.getZ(); pz++)
-                if (world.getBlockState(c1.add(px, 0, pz)).getBlock() == Waypoints.blockWaypoint)
-                    world.setBlockState(c1.add(px, 0, pz), Waypoints.blockWaypoint.getStateFromMeta(0), 3);
+                if (world.getBlockState(c1.add(px, 0, pz)).getBlock() == WaypointsBlocks.WAYPOINT)
+                    world.setBlockState(c1.add(px, 0, pz), WaypointsBlocks.WAYPOINT.getStateFromMeta(0), 3);
     }
 
     @Override
@@ -187,22 +183,22 @@ public class BlockWaypoint extends Block {
         // Set all middle block meta to 5
         for (int pz = 1; pz < size.getZ() - 1; pz++)
             for (int px = 1; px < size.getX() - 1; px++)
-                world.setBlockState(corner.add(px, 0, pz), Waypoints.blockWaypoint.getStateFromMeta(5), 3);
+                world.setBlockState(corner.add(px, 0, pz), WaypointsBlocks.WAYPOINT.getStateFromMeta(5), 3);
         // Set close edge as 1, 2, 2, ...,  2, 2, 3
         // Set away edge as 7, 8, 8, ...,  8, 8, 9
-        world.setBlockState(corner.add(0, 0, 0), Waypoints.blockWaypoint.getStateFromMeta(1), 3); //close
-        world.setBlockState(corner.add(size.getX() - 1, 0, 0), Waypoints.blockWaypoint.getStateFromMeta(3), 3); //close
-        world.setBlockState(corner.add(0, 0, size.getZ() - 1), Waypoints.blockWaypoint.getStateFromMeta(7), 3); //away
-        world.setBlockState(corner.add(size.getX() - 1, 0, size.getZ() - 1), Waypoints.blockWaypoint.getStateFromMeta(9), 3); //away
+        world.setBlockState(corner.add(0, 0, 0), WaypointsBlocks.WAYPOINT.getStateFromMeta(1), 3); //close
+        world.setBlockState(corner.add(size.getX() - 1, 0, 0), WaypointsBlocks.WAYPOINT.getStateFromMeta(3), 3); //close
+        world.setBlockState(corner.add(0, 0, size.getZ() - 1), WaypointsBlocks.WAYPOINT.getStateFromMeta(7), 3); //away
+        world.setBlockState(corner.add(size.getX() - 1, 0, size.getZ() - 1), WaypointsBlocks.WAYPOINT.getStateFromMeta(9), 3); //away
         for (int px = 1; px < size.getX() - 1; px++) {
-            world.setBlockState(corner.add(px, 0, 0), Waypoints.blockWaypoint.getStateFromMeta(2), 3); //close
-            world.setBlockState(corner.add(px, 0, size.getZ() - 1), Waypoints.blockWaypoint.getStateFromMeta(8), 3); //away
+            world.setBlockState(corner.add(px, 0, 0), WaypointsBlocks.WAYPOINT.getStateFromMeta(2), 3); //close
+            world.setBlockState(corner.add(px, 0, size.getZ() - 1), WaypointsBlocks.WAYPOINT.getStateFromMeta(8), 3); //away
         }
         // Set unset left edge to 4
         // Set unset right edge to 6
         for (int pz = 1; pz < size.getZ() - 1; pz++) {
-            world.setBlockState(corner.add(0, 0, pz), Waypoints.blockWaypoint.getStateFromMeta(4), 3);
-            world.setBlockState(corner.add(size.getX() - 1, 0, pz), Waypoints.blockWaypoint.getStateFromMeta(6), 3);
+            world.setBlockState(corner.add(0, 0, pz), WaypointsBlocks.WAYPOINT.getStateFromMeta(4), 3);
+            world.setBlockState(corner.add(size.getX() - 1, 0, pz), WaypointsBlocks.WAYPOINT.getStateFromMeta(6), 3);
         }
     }
 
@@ -257,9 +253,7 @@ public class BlockWaypoint extends Block {
                     }
                 }
                 if (teleported) {
-                    if(Waypoints.playSounds){
-                        world.playSound(entity.posX, entity.posY, entity.posZ, Waypoints.soundEvent, SoundCategory.MASTER, 1.0f, 1.0f, true);
-                    }
+                    world.playSound(entity.posX, entity.posY, entity.posZ, WaypointsSoundEvents.TELEPORT, SoundCategory.MASTER, 1.0f, 1.0f, true);
                     MsgRedDust msg1 = new MsgRedDust(src.dimension, entity.posX, entity.posY, entity.posZ);
                     MsgRedDust msg2 = new MsgRedDust(w.dimension, w.pos.getX() + size.getX() / 2.0, w.pos.getY() + 0.5, w.pos.getZ() + size.getZ() / 2.0);
                     PacketDispatcher.sendToAllAround(msg1, new NetworkRegistry.TargetPoint(src.dimension, entity.posX, entity.posY, entity.posZ, 25));

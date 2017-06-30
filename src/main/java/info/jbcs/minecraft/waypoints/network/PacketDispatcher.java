@@ -34,7 +34,7 @@ public class PacketDispatcher {
      * Since I will be adding wrapper methods, this field is private, but you should
      * make it public if you plan on using it directly.
      */
-    private static final SimpleNetworkWrapper dispatcher = NetworkRegistry.INSTANCE.newSimpleChannel(Waypoints.MODID);
+    private static final SimpleNetworkWrapper dispatcher = NetworkRegistry.INSTANCE.newSimpleChannel(Waypoints.MOD_ID);
     // a simple counter will allow us to get rid of 'magic' numbers used during packet registration
     private static byte packetId = 0;
 

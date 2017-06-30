@@ -1,14 +1,10 @@
 package info.jbcs.minecraft.waypoints;
 
 import com.kamildanak.minecraft.foamflower.gui.GuiHandler;
-import info.jbcs.minecraft.waypoints.block.BlockWaypoint;
 import info.jbcs.minecraft.waypoints.proxy.Proxy;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.init.SoundEvents;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.SoundEvent;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.ISaveHandler;
 import net.minecraft.world.storage.SaveHandler;
@@ -18,40 +14,33 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.*;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
 
-@Mod(modid = Waypoints.MODID, name = Waypoints.MODNAME, version = Waypoints.VERSION,
+@Mod(modid = Waypoints.MOD_ID, name = Waypoints.MODNAME, version = Waypoints.VERSION,
         acceptedMinecraftVersions = "[1.12]")
 public class Waypoints {
-    public static final String MODID = "waypoints";
+    public static final String MOD_ID = "waypoints";
     public static final String MODNAME = "waypoints";
     public static final String VERSION = "1.12-1.2.4";
     public static boolean compactView;
     public static boolean craftable;
     public static boolean allowActivation;
-    public static boolean playSounds;
-    public static boolean playSoundEnderman;
     public static boolean commonDiscoveryList;
     public static boolean allowWaypointDeletion;
     public static boolean logEvents;
     public static int maxSize;
     public static int minSize;
     public static boolean allowNotSquare;
-    public static BlockWaypoint blockWaypoint;
-    @Mod.Instance("Waypoints")
-    public static Waypoints instance;
     public static CreativeTabs tabWaypoints;
     @SidedProxy(clientSide = "info.jbcs.minecraft.waypoints.proxy.ProxyClient", serverSide = "info.jbcs.minecraft.waypoints.proxy.Proxy")
     public static Proxy proxy;
     public static PotionEffect potionEffects[];
     public static int potionEffectsChances[];
     public static int teleportationExhaustion;
-    public static SoundEvent soundEvent;
     static Configuration config;
     private static Logger logger;
     private File loadedWorldDir;
@@ -68,7 +57,6 @@ public class Waypoints {
         config = new Configuration(event.getSuggestedConfigurationFile());
         config.load();
         proxy.preInit();
-        blockWaypoint = new BlockWaypoint("waypoint");
     }
 
     @EventHandler
@@ -80,14 +68,6 @@ public class Waypoints {
         proxy.init();
         loadConfigOptions();
 
-        if (playSoundEnderman)
-            soundEvent = SoundEvents.ENTITY_ENDERMEN_TELEPORT;
-        else {
-            soundEvent = new SoundEvent(new ResourceLocation(MODID, "waypoints.sound.teleport"));
-            soundEvent.setRegistryName("waypoints.sound.teleport");
-            ForgeRegistries.SOUND_EVENTS.register(soundEvent);
-        }
-        //
         MinecraftForge.EVENT_BUS.register(this);
         config.save();
         proxy.registerPackets();
@@ -151,10 +131,6 @@ public class Waypoints {
                 "Set to false to completely disable crafting recipe").getBoolean();
         allowActivation = config.get("general", "can_no_ops_activate", true,
                 "If set to false only ops can enable Waypoins").getBoolean();
-        playSounds = config.get("general", "play sounds", true,
-                "Set to false to disable teleportation sounds").getBoolean();
-        playSoundEnderman = config.get("general", "play sound enderman", true,
-                "Set to false to play custom sound").getBoolean();
         maxSize = config.get("general", "max size", 3,
                 "Set maximum size of waypoints (default 3)").getInt();
         minSize = config.get("general", "min size", 2,

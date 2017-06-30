@@ -1,6 +1,7 @@
 package info.jbcs.minecraft.waypoints.item;
 
 import info.jbcs.minecraft.waypoints.Waypoints;
+import info.jbcs.minecraft.waypoints.init.WaypointsBlocks;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
@@ -17,11 +18,11 @@ import net.minecraft.world.World;
 public class ItemWaypoint extends ItemBlock {
     Block blockWaypoint;
 
-    public ItemWaypoint(Block block, String name) {
+    public ItemWaypoint(Block block) {
         super(block);
         blockWaypoint = block;
         this.setHasSubtypes(true).setMaxDamage(0);
-        setItemName(name);
+        setRegistryName(block.getRegistryName());
     }
 
     @Override
@@ -47,7 +48,7 @@ public class ItemWaypoint extends ItemBlock {
             return EnumActionResult.SUCCESS;
 
         int oldMeta = this.getMetadata(stack.getItemDamage());
-        IBlockState meta = Waypoints.blockWaypoint.getStateForPlacement(world, pos, facing, hitX, hitY, hitZ, oldMeta, player, hand);
+        IBlockState meta = WaypointsBlocks.WAYPOINT.getStateForPlacement(world, pos, facing, hitX, hitY, hitZ, oldMeta, player, hand);
 
 
         int ox = x, oz = z;
@@ -73,10 +74,5 @@ public class ItemWaypoint extends ItemBlock {
 
     boolean isActivated(World world, BlockPos pos) {
         return world.getBlockState(pos).getBlock().getMetaFromState(world.getBlockState(pos)) != 0 && world.getBlockState(pos).getBlock() == blockWaypoint;
-    }
-
-    private void setItemName(String name) {
-        this.setRegistryName(name);
-        this.setUnlocalizedName(this.getRegistryName().toString());
     }
 }

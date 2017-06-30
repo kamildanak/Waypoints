@@ -1,14 +1,16 @@
 {
-  "waypoints.sound.teleport": {
-    "category": "master music",
+  "teleport": {
+    "subtitle": "subtitles.block.waypoint.teleport",
+    "category": "block",
     "replace": false,
     "sounds": [
       {
-        "name": "sound_processed",
+        "name": "teleport",
         "type": "event",
         "volume": 1,
         "pitch": 1
       },
-      "waypoints:teleport" ]
+      "mob/endermen/portal"
+    ]
   }
 }
